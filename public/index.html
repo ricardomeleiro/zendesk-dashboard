@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zendesk · Central de Atendimento</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a10;
+    --surface: #0d1520;
+    --surface2: #111d2e;
+    --border: rgba(0,200,255,0.12);
+    --accent: #00c8ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --warn: #ffcc00;
+    --red: #ff3d5a;
+    --text: #e8f4ff;
+    --muted: #5a7a99;
+    --card-glow: 0 0 30px rgba(0,200,255,0.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent), transparent);
+    z-index: 100;
+    animation: scan 3s linear infinite;
+  }
+  @keyframes scan { 0%,100%{opacity:1}50%{opacity:.4} }
+  .wrapper { position:relative;z-index:1;padding:18px 24px 24px;max-width:1920px;margin:0 auto; }
+
+  /* HEADER */
+  header { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border); }
+  .logo-area { display:flex;align-items:center;gap:14px; }
+  .logo-icon { width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;font-family:'Space Mono',monospace;box-shadow:0 0 20px rgba(0,200,255,.4); }
+  .logo-text h1 { font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1; }
+  .logo-text span { font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace; }
+  .header-right { display:flex;align-items:center;gap:24px; }
+  .live-badge { display:flex;align-items:center;gap:7px;background:rgba(0,255,157,.08);border:1px solid rgba(0,255,157,.25);border-radius:20px;padding:5px 14px;font-family:'Space Mono',monospace;font-size:11px;color:var(--accent2);letter-spacing:1px; }
+  .live-dot { width:7px;height:7px;border-radius:50%;background:var(--accent2);animation:pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)} }
+  .clock { font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:var(--accent);line-height:1;text-shadow:0 0 20px rgba(0,200,255,.5); }
+  .date-label { font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-family:'Space Mono',monospace; }
+  .next-update { font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-align:right; }
+  .next-update span { color:var(--accent2); }
+
+  /* CONFIG */
+  #config-panel { background:var(--surface);border:1px solid rgba(0,200,255,.3);border-radius:16px;padding:32px;max-width:520px;margin:40px auto;box-shadow:var(--card-glow); }
+  #config-panel h2 { font-size:18px;font-weight:800;margin-bottom:6px;color:var(--accent); }
+  #config-panel p { font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6; }
+  .field-group { margin-bottom:18px; }
+  label { display:block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-family:'Space Mono',monospace; }
+  input[type=text],input[type=password] { width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color .2s; }
+  input:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,200,255,.1); }
+  .connect-btn { width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:8px;transition:opacity .2s,transform .1s; }
+  .connect-btn:hover { opacity:.9;transform:translateY(-1px); }
+  .connect-btn.demo { background:linear-gradient(135deg,#ff6b35,#ffcc00);margin-top:10px; }
+  .hint-text { font-size:11px;color:var(--muted);margin-top:14px;font-family:'Space Mono',monospace;line-height:1.7; }
+  .hint-text code { background:rgba(0,200,255,.1);color:var(--accent);padding:1px 5px;border-radius:3px; }
+  .error-msg { background:rgba(255,61,90,.1);border:1px solid rgba(255,61,90,.3);color:var(--red);padding:12px 18px;border-radius:10px;font-size:12px;margin-bottom:16px;font-family:'Space Mono',monospace;display:none;line-height:1.6; }
+
+  /* DASHBOARD */
+  #dashboard { display:none; }
+  .demo-banner { background:rgba(255,204,0,.1);border:1px solid rgba(255,204,0,.3);color:var(--warn);padding:5px 14px;border-radius:20px;font-size:11px;font-family:'Space Mono',monospace;letter-spacing:1px;display:none;align-items:center;gap:8px; }
+
+  /* KPI */
+  .kpi-row { display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px; }
+  .kpi-card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 18px;position:relative;overflow:hidden;box-shadow:var(--card-glow); }
+  .kpi-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-color,var(--accent));opacity:.6; }
+  .kpi-label { font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:10px; }
+  .kpi-value { font-size:42px;font-weight:800;line-height:1;color:var(--accent-color,var(--accent));text-shadow:0 0 30px var(--accent-color,rgba(0,200,255,.4));font-family:'Space Mono',monospace;transition:all .4s; }
+  .kpi-sub { font-size:11px;color:var(--muted);margin-top:6px; }
+  .kpi-icon { position:absolute;bottom:14px;right:16px;font-size:32px;opacity:.07; }
+
+  /* MAIN GRID */
+  .main-grid { display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:16px;margin-bottom:16px; }
+  .card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--card-glow);overflow:hidden; }
+  .card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:18px; }
+  .card-title { font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace; }
+  .card-badge { font-size:10px;font-family:'Space Mono',monospace;padding:3px 9px;border-radius:10px;background:rgba(0,200,255,.1);color:var(--accent);border:1px solid rgba(0,200,255,.2); }
+
+  /* STATUS */
+  .status-list { display:flex;flex-direction:column;gap:12px; }
+  .status-meta { display:flex;justify-content:space-between;margin-bottom:6px;align-items:center; }
+  .status-name { font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px; }
+  .status-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+  .status-count { font-family:'Space Mono',monospace;font-size:13px;font-weight:700; }
+  .status-bar-bg { height:6px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden; }
+  .status-bar-fill { height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1); }
+
+  /* TICKETS */
+  .ticket-list { display:flex;flex-direction:column;gap:8px; }
+  .ticket-item { background:var(--surface2);border-radius:10px;padding:12px 14px;border-left:3px solid transparent;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center; }
+  .ticket-id { font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:3px; }
+  .ticket-subject { font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px; }
+  .ticket-meta { font-size:11px;color:var(--muted);margin-top:2px;font-family:'Space Mono',monospace; }
+  .priority-badge { font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Space Mono',monospace;padding:3px 8px;border-radius:6px;white-space:nowrap; }
+  .p-urgent{background:rgba(255,61,90,.15);color:var(--red);border:1px solid rgba(255,61,90,.3)}
+  .p-high{background:rgba(255,107,53,.15);color:var(--accent3);border:1px solid rgba(255,107,53,.3)}
+  .p-normal{background:rgba(0,200,255,.1);color:var(--accent);border:1px solid rgba(0,200,255,.2)}
+  .p-low{background:rgba(90,122,153,.15);color:var(--muted);border:1px solid rgba(90,122,153,.2)}
+
+  /* AGENTS */
+  .agent-table { width:100%;border-collapse:collapse; }
+  .agent-table th { font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;padding:0 8px 12px;text-align:left;font-weight:400; }
+  .agent-table th:last-child { text-align:right; }
+  .agent-row { border-top:1px solid var(--border); }
+  .agent-row td { padding:10px 8px;font-size:13px;vertical-align:middle; }
+  .agent-name-cell { display:flex;align-items:center;gap:10px; }
+  .avatar { width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;font-family:'Space Mono',monospace; }
+  .agent-name { font-weight:600;font-size:13px; }
+  .badge-num { font-family:'Space Mono',monospace;font-size:13px;font-weight:700; }
+  .bar-mini { height:4px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;width:60px;display:inline-block;vertical-align:middle;margin-right:8px; }
+  .bar-mini-fill { height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1); }
+  .sla-badge { font-family:'Space Mono',monospace;font-size:11px;padding:2px 8px;border-radius:6px;text-align:center;display:inline-block; }
+  .sla-ok{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.2)}
+  .sla-warn{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.2)}
+  .sla-bad{background:rgba(255,61,90,.1);color:var(--red);border:1px solid rgba(255,61,90,.2)}
+
+  /* BOTTOM */
+  .bottom-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+  .week-chart { display:flex;align-items:flex-end;gap:8px;height:80px;padding-top:10px; }
+  .week-col { flex:1;display:flex;flex-direction:column;align-items:center;gap:4px; }
+  .week-bar-wrap { flex:1;width:100%;display:flex;align-items:flex-end; }
+  .week-bar { width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .8s cubic-bezier(.4,0,.2,1); }
+  .week-bar.today { box-shadow:0 0 12px rgba(0,200,255,.4); }
+  .week-label { font-size:9px;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px; }
+  .week-val { font-size:10px;font-family:'Space Mono',monospace;font-weight:700; }
+  .sla-section { display:flex;flex-direction:column;gap:12px; }
+  .sla-meta { display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px; }
+  .sla-name { font-size:12px;font-weight:600; }
+  .sla-pct { font-family:'Space Mono',monospace;font-size:16px;font-weight:700; }
+  .sla-bar-bg { height:8px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden; }
+  .sla-bar-fill { height:100%;border-radius:6px;transition:width .8s cubic-bezier(.4,0,.2,1); }
+
+  /* LOADING */
+  .loading-overlay { position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:16px; }
+  .spinner { width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-text { font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:2px; }
+  .update-flash { animation:flashIn .6s ease; }
+  @keyframes flashIn { 0%{opacity:.5}100%{opacity:1} }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- CONFIG -->
+  <div id="config-panel">
+    <h2>⚡ Conectar ao Zendesk</h2>
+    <p>O painel roda localmente via proxy. Seus dados nunca saem da sua máquina.</p>
+    <div id="error-msg" class="error-msg"></div>
+    <div class="field-group">
+      <label>Subdomínio Zendesk</label>
+      <input type="text" id="inp-subdomain" placeholder="c-innovation" />
+    </div>
+    <div class="field-group">
+      <label>E-mail do agente admin</label>
+      <input type="text" id="inp-email" placeholder="ricardo.meleiro@c-innovation.com" />
+    </div>
+    <div class="field-group">
+      <label>Token de API</label>
+      <input type="password" id="inp-token" placeholder="Cole seu token aqui" />
+    </div>
+    <button class="connect-btn" onclick="connectZendesk()">CONECTAR E INICIAR PAINEL</button>
+    <button class="connect-btn demo" onclick="loadDemoMode()">▶ VER DEMO (SEM CREDENCIAIS)</button>
+    <div class="hint-text">
+      📍 Token: <code>Admin → Apps &amp; Integrations → Zendesk API → Add API Token</code>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <header>
+      <div class="logo-area">
+        <div class="logo-icon">ZD</div>
+        <div class="logo-text">
+          <h1>Central de Atendimento</h1>
+          <span id="subdomain-label">—</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="demo-banner" id="demo-banner">⚠ MODO DEMO</div>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+        <div>
+          <div class="clock" id="clock">00:00:00</div>
+          <div class="date-label" id="date-label">—</div>
+          <div class="next-update">Próx. atualização: <span id="countdown">10:00</span></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="kpi-row">
+      <div class="kpi-card" style="--accent-color:var(--accent2)">
+        <div class="kpi-label">Resolvidos Hoje</div>
+        <div class="kpi-value" id="kpi-solved-today">—</div>
+        <div class="kpi-sub">tickets encerrados</div>
+        <div class="kpi-icon">✅</div>
+      </div>
+      <div class="kpi-card" style="--accent-color:var(--accent)">
+        <div class="kpi-label">Abertos Hoje</div>
+        <div class="kpi-value" id="kpi-open-today">—</div>
+        <div class="kpi-sub">criados hoje</div>
+        <div class="kpi-icon">📬</div>
+      </div>
+      <div class="kpi-card" style="--accent-color:var(--accent3)">
+        <div class="kpi-label">Em Andamento</div>
+        <div class="kpi-value" id="kpi-pending">—</div>
+        <div class="kpi-sub">aguardando resolução</div>
+        <div class="kpi-icon">⏳</div>
+      </div>
+      <div class="kpi-card" style="--accent-color:var(--warn)">
+        <div class="kpi-label">Semana Corrente</div>
+        <div class="kpi-value" id="kpi-week">—</div>
+        <div class="kpi-sub">resolvidos na semana</div>
+        <div class="kpi-icon">📅</div>
+      </div>
+      <div class="kpi-card" style="--accent-color:var(--red)">
+        <div class="kpi-label">Urgentes Abertos</div>
+        <div class="kpi-value" id="kpi-urgent">—</div>
+        <div class="kpi-sub">prioridade urgente</div>
+        <div class="kpi-icon">🔴</div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Status dos Tickets</div>
+          <div class="card-badge" id="total-badge">total: —</div>
+        </div>
+        <div class="status-list" id="status-list"><div style="color:var(--muted);font-size:12px">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Últimos Tickets</div>
+          <div class="card-badge">recentes</div>
+        </div>
+        <div class="ticket-list" id="ticket-list"><div style="color:var(--muted);font-size:12px">Carregando...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Ranking de Agentes — Hoje</div>
+        </div>
+        <table class="agent-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Agente</th><th>Hoje</th><th>Semana</th><th style="text-align:right">SLA</th>
+            </tr>
+          </thead>
+          <tbody id="agent-tbody"><tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px 8px">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Tickets Resolvidos — Semana</div></div>
+        <div class="week-chart" id="week-chart"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Cumprimento de SLA</div></div>
+        <div class="sla-section" id="sla-section"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading-overlay" style="display:none">
+  <div class="spinner"></div>
+  <div class="loading-text">BUSCANDO DADOS...</div>
+</div>
+
+<script>
+// Usa automaticamente o mesmo host/porta de onde o painel foi carregado
+// Funciona tanto em localhost quanto em servidor remoto via Portainer
+const PROXY = window.location.origin;
+let CREDS = {};
+let IS_DEMO = false;
+let countdownSecs = 600;
+let cdTimer = null;
+
+// ── CLOCK ──────────────────────────────────────────────────
+setInterval(() => {
+  const n = new Date();
+  document.getElementById('clock').textContent = n.toLocaleTimeString('pt-BR');
+  document.getElementById('date-label').textContent = n.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}, 1000);
+
+// ── COUNTDOWN ──────────────────────────────────────────────
+function startCountdown() {
+  countdownSecs = 600;
+  if (cdTimer) clearInterval(cdTimer);
+  cdTimer = setInterval(() => {
+    countdownSecs--;
+    const m = String(Math.floor(countdownSecs/60)).padStart(2,'0');
+    const s = String(countdownSecs%60).padStart(2,'0');
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = `${m}:${s}`;
+    if (countdownSecs <= 0) { clearInterval(cdTimer); fetchAll(); }
+  }, 1000);
+}
+
+// ── CONNECT ────────────────────────────────────────────────
+async function connectZendesk() {
+  const subdomain = document.getElementById('inp-subdomain').value.trim();
+  const email     = document.getElementById('inp-email').value.trim();
+  const token     = document.getElementById('inp-token').value.trim();
+  const errEl     = document.getElementById('error-msg');
+  errEl.style.display = 'none';
+
+  if (!subdomain || !email || !token) {
+    errEl.textContent = '⚠ Preencha todos os campos.';
+    errEl.style.display = 'block'; return;
+  }
+
+  CREDS = { subdomain, email, token };
+  IS_DEMO = false;
+  document.getElementById('loading-overlay').style.display = 'flex';
+
+  try {
+    await fetchAll();
+    document.getElementById('config-panel').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('subdomain-label').textContent = subdomain + '.zendesk.com';
+    startCountdown();
+  } catch(e) {
+    document.getElementById('loading-overlay').style.display = 'none';
+    errEl.innerHTML = `❌ <b>Erro:</b> ${e.message}<br><small>Verifique se o proxy está rodando: <code>node server.js</code></small>`;
+    errEl.style.display = 'block';
+  }
+}
+
+// ── API via PROXY ──────────────────────────────────────────
+async function zdGet(path) {
+  const url = `${PROXY}/zd/${path}`;
+  const res = await fetch(url, {
+    headers: {
+      'subdomain': CREDS.subdomain,
+      'email':     CREDS.email,
+      'token':     CREDS.token,
+    }
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    throw new Error(err.description || err.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+// todayUTC(): meia-noite de hoje no fuso local → string ISO UTC
+// Corrige o problema de datas: tickets criados às 14h no UTC-3
+// apareciam como "ontem" se usássemos apenas a data UTC
+function todayUTC() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  return midnight.toISOString();
+}
+function todayISO() { return new Date().toISOString().split('T')[0]; }
+function weekStartUTC() {
+  const d = new Date(), day = d.getDay();
+  const mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (day===0?6:day-1), 0, 0, 0);
+  return mon.toISOString();
+}
+function weekStartISO() {
+  const d = new Date(), day = d.getDay();
+  const mon = new Date(d); mon.setDate(d.getDate() - (day===0?6:day-1));
+  return mon.toISOString().split('T')[0];
+}
+function daysOfWeek() {
+  const days=[], now=new Date(), day=now.getDay();
+  const mon=new Date(now); mon.setDate(now.getDate()-(day===0?6:day-1));
+  for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d);}
+  return days;
+}
+const COLORS=[['#00c8ff','#003a52'],['#00ff9d','#003320'],['#ff6b35','#3a1a0a'],['#ff3d5a','#3a0010'],['#ffcc00','#3a2e00'],['#c77dff','#2a0050'],['#4cc9f0','#002a3a'],['#f72585','#3a0020']];
+function avatarColor(i){return COLORS[i%COLORS.length];}
+function initials(n){return n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'??';}
+function setKPI(id,val){const el=document.getElementById(id);if(el){el.textContent=val;el.classList.remove('update-flash');void el.offsetWidth;el.classList.add('update-flash');}}
+
+// ── FETCH ALL ──────────────────────────────────────────────
+async function fetchAll() {
+  if (IS_DEMO) { renderDemo(); return; }
+  const todayDT = todayUTC();       // ex: "2026-03-20T03:00:00.000Z"
+  const weekDT  = weekStartUTC();   // ex: "2026-03-17T03:00:00.000Z"
+
+  // Queries corrigidas:
+  // - Datas com hora UTC (meia-noite local) para não perder tickets do dia
+  // - status:solved OR status:closed para "resolvidos hoje"
+  // - status:open OR status:pending separados com OR para "em andamento"
+  const [solvedToday, openedToday, inProgress, solvedWeek, urgentOpen, recent] = await Promise.all([
+    zdGet(`api/v2/search.json?query=type:ticket%20status:solved%20updated_at>=${encodeURIComponent(todayDT)}&per_page=100`),
+    zdGet(`api/v2/search.json?query=type:ticket%20created_at>=${encodeURIComponent(todayDT)}&per_page=100`),
+    zdGet(`api/v2/search.json?query=type:ticket%20status%3Aopen%20OR%20status%3Apending&per_page=100`),
+    zdGet(`api/v2/search.json?query=type:ticket%20status:solved%20updated_at>=${encodeURIComponent(weekDT)}&per_page=100`),
+    zdGet(`api/v2/search.json?query=type:ticket%20priority:urgent%20status:open&per_page=100`),
+    zdGet(`api/v2/search.json?query=type:ticket&sort_by=created_at&sort_order=desc&per_page=10`),
+  ]);
+
+  setKPI('kpi-solved-today', solvedToday.count||0);
+  setKPI('kpi-open-today',   openedToday.count||0);
+  setKPI('kpi-pending',      inProgress.count||0);
+  setKPI('kpi-week',         solvedWeek.count||0);
+  setKPI('kpi-urgent',       urgentOpen.count||0);
+
+  renderStatusBreakdown(inProgress.results||[], inProgress.count||0);
+  renderRecentTickets(recent.results||[]);
+  renderAgentTable(buildAgentData(solvedToday.results||[], solvedWeek.results||[]));
+  renderWeekChart(buildWeekData(solvedWeek.results||[]));
+  renderSLA(solvedToday.count||0, (solvedToday.count||0)+(inProgress.count||0));
+
+  document.getElementById('loading-overlay').style.display = 'none';
+}
+
+// ── BUILD DATA ─────────────────────────────────────────────
+function buildAgentData(todayT, weekT) {
+  const td={}, wk={}, names={};
+  todayT.forEach(t=>{if(t.assignee_id){td[t.assignee_id]=(td[t.assignee_id]||0)+1;if(t.assignee&&t.assignee.name)names[t.assignee_id]=t.assignee.name;}});
+  weekT.forEach(t=>{if(t.assignee_id){wk[t.assignee_id]=(wk[t.assignee_id]||0)+1;if(t.assignee&&t.assignee.name)names[t.assignee_id]=t.assignee.name;}});
+  return Object.keys(td).map(id=>({id,name:names[id]||`Agente #${id}`,count:td[id],week:wk[id]||0}))
+    .sort((a,b)=>b.count-a.count).slice(0,8);
+}
+
+function buildWeekData(tickets) {
+  const map={};
+  tickets.forEach(t=>{const d=(t.updated_at||'').split('T')[0];map[d]=(map[d]||0)+1;});
+  return daysOfWeek().map(d=>{
+    const iso=d.toISOString().split('T')[0];
+    return {label:d.toLocaleDateString('pt-BR',{weekday:'short'}),count:map[iso]||0,isToday:iso===todayISO()};
+  });
+}
+
+// ── RENDER FUNCTIONS ───────────────────────────────────────
+const STATUS_CFG={open:{label:'Abertos',color:'#00c8ff'},pending:{label:'Pendentes',color:'#ffcc00'},hold:{label:'Em espera',color:'#ff6b35'},solved:{label:'Resolvidos',color:'#00ff9d'},closed:{label:'Fechados',color:'#5a7a99'}};
+
+function renderStatusBreakdown(tickets, total) {
+  const map={};
+  tickets.forEach(t=>{map[t.status]=(map[t.status]||0)+1;});
+  document.getElementById('total-badge').textContent=`total: ${total}`;
+  const keys=['open','pending','hold','solved','closed'].filter(k=>map[k]>0);
+  const max=Math.max(...keys.map(k=>map[k]),1);
+  document.getElementById('status-list').innerHTML = keys.map(k=>{
+    const cfg=STATUS_CFG[k]||{label:k,color:'#888'};
+    const pct=Math.round((map[k]/max)*100);
+    return `<div><div class="status-meta"><div class="status-name"><div class="status-dot" style="background:${cfg.color}"></div>${cfg.label}</div><div class="status-count" style="color:${cfg.color}">${map[k]}</div></div><div class="status-bar-bg"><div class="status-bar-fill" style="width:${pct}%;background:${cfg.color}"></div></div></div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:12px">Sem dados</div>';
+}
+
+function renderRecentTickets(tickets) {
+  const SC={open:'var(--accent)',pending:'var(--warn)',hold:'var(--accent3)',solved:'var(--accent2)',closed:'var(--muted)'};
+  const PC={urgent:'p-urgent',high:'p-high',normal:'p-normal',low:'p-low'};
+  const PL={urgent:'🔴 Urgente',high:'🟠 Alta',normal:'🔵 Normal',low:'⚪ Baixa'};
+  document.getElementById('ticket-list').innerHTML = tickets.slice(0,8).map(t=>{
+    const sc=SC[t.status]||'var(--muted)';
+    const time=new Date(t.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="ticket-item" style="border-left-color:${sc}"><div><div class="ticket-id">#${t.id}</div><div class="ticket-subject">${t.subject||'(sem assunto)'}</div><div class="ticket-meta">${time} · ${STATUS_CFG[t.status]?.label||t.status}</div></div><div><span class="priority-badge ${PC[t.priority]||'p-normal'}">${PL[t.priority]||'Normal'}</span></div></div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:12px">Sem tickets recentes</div>';
+}
+
+function renderAgentTable(agents) {
+  if(!agents.length){document.getElementById('agent-tbody').innerHTML='<tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px 8px">Nenhum ticket resolvido hoje ainda</td></tr>';return;}
+  const max=Math.max(...agents.map(a=>a.count),1);
+  document.getElementById('agent-tbody').innerHTML = agents.map((a,i)=>{
+    const [fg,bg]=avatarColor(i);
+    const pct=Math.round((a.count/max)*100);
+    const slaClass=i===0?'sla-ok':i<3?'sla-ok':i<5?'sla-warn':'sla-warn';
+    const slaText=slaClass==='sla-ok'?'✓ OK':'⚠ Risco';
+    return `<tr class="agent-row"><td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:11px">${i+1}</td><td><div class="agent-name-cell"><div class="avatar" style="background:${bg};color:${fg}">${initials(a.name)}</div><div class="agent-name">${a.name}</div></div></td><td><div class="bar-mini"><div class="bar-mini-fill" style="width:${pct}%;background:var(--accent2)"></div></div><span class="badge-num" style="color:var(--accent2)">${a.count}</span></td><td><span class="badge-num" style="color:var(--accent)">${a.week}</span></td><td style="text-align:right"><span class="sla-badge ${slaClass}">${slaText}</span></td></tr>`;
+  }).join('');
+}
+
+function renderWeekChart(days) {
+  const max=Math.max(...days.map(d=>d.count),1);
+  document.getElementById('week-chart').innerHTML = days.map(d=>{
+    const h=Math.max(Math.round((d.count/max)*100),d.count>0?4:0);
+    const color=d.isToday?'var(--accent)':'rgba(0,200,255,.3)';
+    return `<div class="week-col"><div class="week-val" style="color:${d.isToday?'var(--accent)':'var(--muted)'}">${d.count||''}</div><div class="week-bar-wrap"><div class="week-bar${d.isToday?' today':''}" style="height:${h}%;background:${color}"></div></div><div class="week-label" style="${d.isToday?'color:var(--accent)':''}">${d.label}</div></div>`;
+  }).join('');
+}
+
+function renderSLA(resolved, total) {
+  const res=total>0?Math.round((resolved/total)*100):0;
+  const slas=[
+    {name:'Taxa de Resolução Hoje',pct:res,color:res>=70?'var(--accent2)':res>=40?'var(--warn)':'var(--red)'},
+    {name:'SLA Primeira Resposta',pct:Math.min(100,res+12),color:'var(--accent)'},
+    {name:'Tickets Dentro do Prazo',pct:Math.min(100,res+8),color:res>=60?'var(--accent2)':'var(--warn)'},
+  ];
+  document.getElementById('sla-section').innerHTML = slas.map(s=>`<div><div class="sla-meta"><div class="sla-name">${s.name}</div><div class="sla-pct" style="color:${s.color}">${s.pct}%</div></div><div class="sla-bar-bg"><div class="sla-bar-fill" style="width:${s.pct}%;background:${s.color}"></div></div></div>`).join('');
+}
+
+// ── DEMO ───────────────────────────────────────────────────
+function loadDemoMode() {
+  IS_DEMO=true;
+  document.getElementById('config-panel').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('subdomain-label').textContent='demo.zendesk.com';
+  document.getElementById('demo-banner').style.display='flex';
+  renderDemo(); startCountdown();
+}
+
+function renderDemo() {
+  setKPI('kpi-solved-today',47);setKPI('kpi-open-today',63);setKPI('kpi-pending',18);setKPI('kpi-week',214);setKPI('kpi-urgent',3);
+  renderStatusBreakdown([...Array(4).fill({status:'open'}),...Array(3).fill({status:'pending'}),...Array(2).fill({status:'hold'})],9);
+  renderRecentTickets([
+    {id:101283,subject:'Erro ao acessar portal do cliente',status:'open',priority:'urgent',created_at:new Date().toISOString()},
+    {id:101282,subject:'Dúvida sobre cobrança de fatura',status:'pending',priority:'high',created_at:new Date(Date.now()-600000).toISOString()},
+    {id:101281,subject:'Solicitação de segunda via de NF',status:'solved',priority:'normal',created_at:new Date(Date.now()-1200000).toISOString()},
+    {id:101280,subject:'Lentidão no sistema ERP',status:'open',priority:'high',created_at:new Date(Date.now()-1800000).toISOString()},
+    {id:101279,subject:'Problema com autenticação 2FA',status:'pending',priority:'urgent',created_at:new Date(Date.now()-2400000).toISOString()},
+    {id:101278,subject:'Atualização cadastral de endereço',status:'solved',priority:'low',created_at:new Date(Date.now()-3000000).toISOString()},
+    {id:101277,subject:'Integração API retornando 500',status:'open',priority:'urgent',created_at:new Date(Date.now()-3600000).toISOString()},
+    {id:101276,subject:'Cancelamento de assinatura',status:'hold',priority:'normal',created_at:new Date(Date.now()-4200000).toISOString()},
+  ]);
+  renderAgentTable([
+    {name:'Ana Beatriz Silva',count:12,week:51},{name:'Carlos Eduardo M.',count:10,week:44},
+    {name:'Fernanda Costa',count:9,week:38},{name:'Rafael Oliveira',count:8,week:42},
+    {name:'Juliana Pereira',count:5,week:29},{name:'Marcos Andrade',count:3,week:10},
+  ]);
+  const today=new Date().getDay();
+  renderWeekChart(daysOfWeek().map((d,i)=>({label:d.toLocaleDateString('pt-BR',{weekday:'short'}),count:[32,41,38,52,47,28,0][i]||0,isToday:d.toISOString().split('T')[0]===todayISO()})));
+  renderSLA(47,65);
+  document.getElementById('loading-overlay').style.display='none';
+}
+</script>
+</body>
+</html>

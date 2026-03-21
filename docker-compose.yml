@@ -1,0 +1,9 @@
+services:
+  zendesk-dashboard:
+    image: SEU_USUARIO/zendesk-dashboard:latest
+    container_name: zendesk-dashboard
+    ports:
+      - "3737:3737"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
