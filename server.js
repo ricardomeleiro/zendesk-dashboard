@@ -12,32 +12,40 @@ app.use(express.json());
 // ── Painel HTML estático ──────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Healthcheck ───────────────────────────────────────────────
+// ── Healthcheck & Config ──────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-// ── Proxy para a API do Zendesk ───────────────────────────────
-app.get('/zd/:zdpath(*)', async (req, res) => {
-  const { subdomain, email, token } = req.headers;
+app.get('/config', (req, res) => {
+  const envSubdomain = process.env.ZENDESK_SUBDOMAIN || process.env.SUBDOMAIN || '';
+  const envToken     = process.env.ZENDESK_OAUTH_TOKEN || process.env.ZENDESK_TOKEN || process.env.OAUTH_TOKEN || '';
 
-  if (!subdomain || !email || !token) {
-    return res.status(400).json({ error: 'Headers subdomain, email e token são obrigatórios.' });
+  res.json({
+    hasEnvConfig: Boolean(envSubdomain && envToken),
+    subdomain: envSubdomain
+  });
+});
+
+// ── Proxy para a API do Zendesk (OAuth Bearer Token) ─────────
+app.get('/zd/:zdpath(*)', async (req, res) => {
+  const subdomain = req.headers.subdomain || process.env.ZENDESK_SUBDOMAIN || process.env.SUBDOMAIN;
+  const token     = req.headers.token     || process.env.ZENDESK_OAUTH_TOKEN || process.env.ZENDESK_TOKEN || process.env.OAUTH_TOKEN;
+
+  if (!subdomain || !token) {
+    return res.status(400).json({ error: 'Subdomínio e Token OAuth não foram fornecidos via header ou ENV.' });
   }
 
   const zdPath = req.params.zdpath;
 
   // Repassa a query string EXATAMENTE como chegou, sem recodificar
-  // Isso preserva datas como "2026-03-20T03:00:00.000Z" corretamente
   const rawQuery = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
   const zdURL = `https://${subdomain}.zendesk.com/${zdPath}${rawQuery}`;
-
-  const creds = Buffer.from(`${email}/token:${token}`).toString('base64');
 
   console.log(`[proxy] GET ${zdURL}`);
 
   try {
     const zdRes = await fetch(zdURL, {
       headers: {
-        'Authorization': `Basic ${creds}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type':  'application/json',
         'Accept':        'application/json',
       },

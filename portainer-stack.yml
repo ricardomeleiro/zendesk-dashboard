@@ -1,24 +1,14 @@
-# ============================================================
-#  portainer-stack.yml
-#  Cole este conteúdo no Portainer > Stacks > Add Stack
-#  Substitua SEU_USUARIO pelo seu usuario do Docker Hub
-# ============================================================
-
 services:
   zendesk-dashboard:
-    image: SEU_USUARIO/zendesk-dashboard:latest
+    image: rickdevs/zendesk-dashboard:latest
     container_name: zendesk-dashboard
     ports:
       - "3737:3737"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3737"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      - ZENDESK_SUBDOMAIN=c-innovation
+      - ZENDESK_OAUTH_TOKEN=seu_token_oauth_aqui
     labels:
       - "com.c-innovation.app=zendesk-dashboard"
       - "com.c-innovation.version=1.0"

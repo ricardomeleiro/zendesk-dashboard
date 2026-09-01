@@ -1,546 +1,2087 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zendesk · Central de Atendimento</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #060a10;
-    --surface: #0d1520;
-    --surface2: #111d2e;
-    --border: rgba(0,200,255,0.12);
-    --accent: #00c8ff;
-    --accent2: #00ff9d;
-    --accent3: #ff6b35;
-    --warn: #ffcc00;
-    --red: #ff3d5a;
-    --text: #e8f4ff;
-    --muted: #5a7a99;
-    --card-glow: 0 0 30px rgba(0,200,255,0.07);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-    position: relative;
-  }
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(rgba(0,200,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,200,255,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none; z-index: 0;
-  }
-  body::after {
-    content: '';
-    position: fixed; top: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent), transparent);
-    z-index: 100;
-    animation: scan 3s linear infinite;
-  }
-  @keyframes scan { 0%,100%{opacity:1}50%{opacity:.4} }
-  .wrapper { position:relative;z-index:1;padding:18px 24px 24px;max-width:1920px;margin:0 auto; }
-
-  /* HEADER */
-  header { display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border); }
-  .logo-area { display:flex;align-items:center;gap:14px; }
-  .logo-icon { width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;font-family:'Space Mono',monospace;box-shadow:0 0 20px rgba(0,200,255,.4); }
-  .logo-text h1 { font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1; }
-  .logo-text span { font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace; }
-  .header-right { display:flex;align-items:center;gap:24px; }
-  .live-badge { display:flex;align-items:center;gap:7px;background:rgba(0,255,157,.08);border:1px solid rgba(0,255,157,.25);border-radius:20px;padding:5px 14px;font-family:'Space Mono',monospace;font-size:11px;color:var(--accent2);letter-spacing:1px; }
-  .live-dot { width:7px;height:7px;border-radius:50%;background:var(--accent2);animation:pulse 1.5s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)} }
-  .clock { font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:var(--accent);line-height:1;text-shadow:0 0 20px rgba(0,200,255,.5); }
-  .date-label { font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-family:'Space Mono',monospace; }
-  .next-update { font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-align:right; }
-  .next-update span { color:var(--accent2); }
-
-  /* CONFIG */
-  #config-panel { background:var(--surface);border:1px solid rgba(0,200,255,.3);border-radius:16px;padding:32px;max-width:520px;margin:40px auto;box-shadow:var(--card-glow); }
-  #config-panel h2 { font-size:18px;font-weight:800;margin-bottom:6px;color:var(--accent); }
-  #config-panel p { font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6; }
-  .field-group { margin-bottom:18px; }
-  label { display:block;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-family:'Space Mono',monospace; }
-  input[type=text],input[type=password] { width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Space Mono',monospace;font-size:13px;outline:none;transition:border-color .2s; }
-  input:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,200,255,.1); }
-  .connect-btn { width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#000;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px;text-transform:uppercase;margin-top:8px;transition:opacity .2s,transform .1s; }
-  .connect-btn:hover { opacity:.9;transform:translateY(-1px); }
-  .connect-btn.demo { background:linear-gradient(135deg,#ff6b35,#ffcc00);margin-top:10px; }
-  .hint-text { font-size:11px;color:var(--muted);margin-top:14px;font-family:'Space Mono',monospace;line-height:1.7; }
-  .hint-text code { background:rgba(0,200,255,.1);color:var(--accent);padding:1px 5px;border-radius:3px; }
-  .error-msg { background:rgba(255,61,90,.1);border:1px solid rgba(255,61,90,.3);color:var(--red);padding:12px 18px;border-radius:10px;font-size:12px;margin-bottom:16px;font-family:'Space Mono',monospace;display:none;line-height:1.6; }
-
-  /* DASHBOARD */
-  #dashboard { display:none; }
-  .demo-banner { background:rgba(255,204,0,.1);border:1px solid rgba(255,204,0,.3);color:var(--warn);padding:5px 14px;border-radius:20px;font-size:11px;font-family:'Space Mono',monospace;letter-spacing:1px;display:none;align-items:center;gap:8px; }
-
-  /* KPI */
-  .kpi-row { display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px; }
-  .kpi-card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 18px;position:relative;overflow:hidden;box-shadow:var(--card-glow); }
-  .kpi-card::before { content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent-color,var(--accent));opacity:.6; }
-  .kpi-label { font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:10px; }
-  .kpi-value { font-size:42px;font-weight:800;line-height:1;color:var(--accent-color,var(--accent));text-shadow:0 0 30px var(--accent-color,rgba(0,200,255,.4));font-family:'Space Mono',monospace;transition:all .4s; }
-  .kpi-sub { font-size:11px;color:var(--muted);margin-top:6px; }
-  .kpi-icon { position:absolute;bottom:14px;right:16px;font-size:32px;opacity:.07; }
-
-  /* MAIN GRID */
-  .main-grid { display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:16px;margin-bottom:16px; }
-  .card { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--card-glow);overflow:hidden; }
-  .card-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:18px; }
-  .card-title { font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace; }
-  .card-badge { font-size:10px;font-family:'Space Mono',monospace;padding:3px 9px;border-radius:10px;background:rgba(0,200,255,.1);color:var(--accent);border:1px solid rgba(0,200,255,.2); }
-
-  /* STATUS */
-  .status-list { display:flex;flex-direction:column;gap:12px; }
-  .status-meta { display:flex;justify-content:space-between;margin-bottom:6px;align-items:center; }
-  .status-name { font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px; }
-  .status-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
-  .status-count { font-family:'Space Mono',monospace;font-size:13px;font-weight:700; }
-  .status-bar-bg { height:6px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden; }
-  .status-bar-fill { height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1); }
-
-  /* TICKETS */
-  .ticket-list { display:flex;flex-direction:column;gap:8px; }
-  .ticket-item { background:var(--surface2);border-radius:10px;padding:12px 14px;border-left:3px solid transparent;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center; }
-  .ticket-id { font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:3px; }
-  .ticket-subject { font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px; }
-  .ticket-meta { font-size:11px;color:var(--muted);margin-top:2px;font-family:'Space Mono',monospace; }
-  .priority-badge { font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:'Space Mono',monospace;padding:3px 8px;border-radius:6px;white-space:nowrap; }
-  .p-urgent{background:rgba(255,61,90,.15);color:var(--red);border:1px solid rgba(255,61,90,.3)}
-  .p-high{background:rgba(255,107,53,.15);color:var(--accent3);border:1px solid rgba(255,107,53,.3)}
-  .p-normal{background:rgba(0,200,255,.1);color:var(--accent);border:1px solid rgba(0,200,255,.2)}
-  .p-low{background:rgba(90,122,153,.15);color:var(--muted);border:1px solid rgba(90,122,153,.2)}
-
-  /* AGENTS */
-  .agent-table { width:100%;border-collapse:collapse; }
-  .agent-table th { font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;padding:0 8px 12px;text-align:left;font-weight:400; }
-  .agent-table th:last-child { text-align:right; }
-  .agent-row { border-top:1px solid var(--border); }
-  .agent-row td { padding:10px 8px;font-size:13px;vertical-align:middle; }
-  .agent-name-cell { display:flex;align-items:center;gap:10px; }
-  .avatar { width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;font-family:'Space Mono',monospace; }
-  .agent-name { font-weight:600;font-size:13px; }
-  .badge-num { font-family:'Space Mono',monospace;font-size:13px;font-weight:700; }
-  .bar-mini { height:4px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;width:60px;display:inline-block;vertical-align:middle;margin-right:8px; }
-  .bar-mini-fill { height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1); }
-  .sla-badge { font-family:'Space Mono',monospace;font-size:11px;padding:2px 8px;border-radius:6px;text-align:center;display:inline-block; }
-  .sla-ok{background:rgba(0,255,157,.1);color:var(--accent2);border:1px solid rgba(0,255,157,.2)}
-  .sla-warn{background:rgba(255,204,0,.1);color:var(--warn);border:1px solid rgba(255,204,0,.2)}
-  .sla-bad{background:rgba(255,61,90,.1);color:var(--red);border:1px solid rgba(255,61,90,.2)}
-
-  /* BOTTOM */
-  .bottom-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
-  .week-chart { display:flex;align-items:flex-end;gap:8px;height:80px;padding-top:10px; }
-  .week-col { flex:1;display:flex;flex-direction:column;align-items:center;gap:4px; }
-  .week-bar-wrap { flex:1;width:100%;display:flex;align-items:flex-end; }
-  .week-bar { width:100%;border-radius:4px 4px 0 0;min-height:4px;transition:height .8s cubic-bezier(.4,0,.2,1); }
-  .week-bar.today { box-shadow:0 0 12px rgba(0,200,255,.4); }
-  .week-label { font-size:9px;font-family:'Space Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px; }
-  .week-val { font-size:10px;font-family:'Space Mono',monospace;font-weight:700; }
-  .sla-section { display:flex;flex-direction:column;gap:12px; }
-  .sla-meta { display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px; }
-  .sla-name { font-size:12px;font-weight:600; }
-  .sla-pct { font-family:'Space Mono',monospace;font-size:16px;font-weight:700; }
-  .sla-bar-bg { height:8px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden; }
-  .sla-bar-fill { height:100%;border-radius:6px;transition:width .8s cubic-bezier(.4,0,.2,1); }
-
-  /* LOADING */
-  .loading-overlay { position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:16px; }
-  .spinner { width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .loading-text { font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:2px; }
-  .update-flash { animation:flashIn .6s ease; }
-  @keyframes flashIn { 0%{opacity:.5}100%{opacity:1} }
-</style>
-</head>
-<body>
-<div class="wrapper">
-
-  <!-- CONFIG -->
-  <div id="config-panel">
-    <h2>⚡ Conectar ao Zendesk</h2>
-    <p>O painel roda localmente via proxy. Seus dados nunca saem da sua máquina.</p>
-    <div id="error-msg" class="error-msg"></div>
-    <div class="field-group">
-      <label>Subdomínio Zendesk</label>
-      <input type="text" id="inp-subdomain" placeholder="c-innovation" />
-    </div>
-    <div class="field-group">
-      <label>E-mail do agente admin</label>
-      <input type="text" id="inp-email" placeholder="ricardo.meleiro@c-innovation.com" />
-    </div>
-    <div class="field-group">
-      <label>Token de API</label>
-      <input type="password" id="inp-token" placeholder="Cole seu token aqui" />
-    </div>
-    <button class="connect-btn" onclick="connectZendesk()">CONECTAR E INICIAR PAINEL</button>
-    <button class="connect-btn demo" onclick="loadDemoMode()">▶ VER DEMO (SEM CREDENCIAIS)</button>
-    <div class="hint-text">
-      📍 Token: <code>Admin → Apps &amp; Integrations → Zendesk API → Add API Token</code>
-    </div>
-  </div>
-
-  <!-- DASHBOARD -->
-  <div id="dashboard">
-    <header>
-      <div class="logo-area">
-        <div class="logo-icon">ZD</div>
-        <div class="logo-text">
-          <h1>Central de Atendimento</h1>
-          <span id="subdomain-label">—</span>
-        </div>
-      </div>
-      <div class="header-right">
-        <div class="demo-banner" id="demo-banner">⚠ MODO DEMO</div>
-        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
-        <div>
-          <div class="clock" id="clock">00:00:00</div>
-          <div class="date-label" id="date-label">—</div>
-          <div class="next-update">Próx. atualização: <span id="countdown">10:00</span></div>
-        </div>
-      </div>
-    </header>
-
-    <div class="kpi-row">
-      <div class="kpi-card" style="--accent-color:var(--accent2)">
-        <div class="kpi-label">Resolvidos Hoje</div>
-        <div class="kpi-value" id="kpi-solved-today">—</div>
-        <div class="kpi-sub">tickets encerrados</div>
-        <div class="kpi-icon">✅</div>
-      </div>
-      <div class="kpi-card" style="--accent-color:var(--accent)">
-        <div class="kpi-label">Abertos Hoje</div>
-        <div class="kpi-value" id="kpi-open-today">—</div>
-        <div class="kpi-sub">criados hoje</div>
-        <div class="kpi-icon">📬</div>
-      </div>
-      <div class="kpi-card" style="--accent-color:var(--accent3)">
-        <div class="kpi-label">Em Andamento</div>
-        <div class="kpi-value" id="kpi-pending">—</div>
-        <div class="kpi-sub">aguardando resolução</div>
-        <div class="kpi-icon">⏳</div>
-      </div>
-      <div class="kpi-card" style="--accent-color:var(--warn)">
-        <div class="kpi-label">Semana Corrente</div>
-        <div class="kpi-value" id="kpi-week">—</div>
-        <div class="kpi-sub">resolvidos na semana</div>
-        <div class="kpi-icon">📅</div>
-      </div>
-      <div class="kpi-card" style="--accent-color:var(--red)">
-        <div class="kpi-label">Urgentes Abertos</div>
-        <div class="kpi-value" id="kpi-urgent">—</div>
-        <div class="kpi-sub">prioridade urgente</div>
-        <div class="kpi-icon">🔴</div>
-      </div>
-    </div>
-
-    <div class="main-grid">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Status dos Tickets</div>
-          <div class="card-badge" id="total-badge">total: —</div>
-        </div>
-        <div class="status-list" id="status-list"><div style="color:var(--muted);font-size:12px">Carregando...</div></div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Últimos Tickets</div>
-          <div class="card-badge">recentes</div>
-        </div>
-        <div class="ticket-list" id="ticket-list"><div style="color:var(--muted);font-size:12px">Carregando...</div></div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Ranking de Agentes — Hoje</div>
-        </div>
-        <table class="agent-table">
-          <thead>
-            <tr>
-              <th>#</th><th>Agente</th><th>Hoje</th><th>Semana</th><th style="text-align:right">SLA</th>
-            </tr>
-          </thead>
-          <tbody id="agent-tbody"><tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px 8px">Carregando...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="bottom-row">
-      <div class="card">
-        <div class="card-header"><div class="card-title">Tickets Resolvidos — Semana</div></div>
-        <div class="week-chart" id="week-chart"></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">Cumprimento de SLA</div></div>
-        <div class="sla-section" id="sla-section"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="loading-overlay" id="loading-overlay" style="display:none">
-  <div class="spinner"></div>
-  <div class="loading-text">BUSCANDO DADOS...</div>
-</div>
-
-<script>
-// Usa automaticamente o mesmo host/porta de onde o painel foi carregado
-// Funciona tanto em localhost quanto em servidor remoto via Portainer
-const PROXY = window.location.origin;
-let CREDS = {};
-let IS_DEMO = false;
-let countdownSecs = 600;
-let cdTimer = null;
-
-// ── CLOCK ──────────────────────────────────────────────────
-setInterval(() => {
-  const n = new Date();
-  document.getElementById('clock').textContent = n.toLocaleTimeString('pt-BR');
-  document.getElementById('date-label').textContent = n.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-}, 1000);
-
-// ── COUNTDOWN ──────────────────────────────────────────────
-function startCountdown() {
-  countdownSecs = 600;
-  if (cdTimer) clearInterval(cdTimer);
-  cdTimer = setInterval(() => {
-    countdownSecs--;
-    const m = String(Math.floor(countdownSecs/60)).padStart(2,'0');
-    const s = String(countdownSecs%60).padStart(2,'0');
-    const el = document.getElementById('countdown');
-    if (el) el.textContent = `${m}:${s}`;
-    if (countdownSecs <= 0) { clearInterval(cdTimer); fetchAll(); }
-  }, 1000);
-}
-
-// ── CONNECT ────────────────────────────────────────────────
-async function connectZendesk() {
-  const subdomain = document.getElementById('inp-subdomain').value.trim();
-  const email     = document.getElementById('inp-email').value.trim();
-  const token     = document.getElementById('inp-token').value.trim();
-  const errEl     = document.getElementById('error-msg');
-  errEl.style.display = 'none';
-
-  if (!subdomain || !email || !token) {
-    errEl.textContent = '⚠ Preencha todos os campos.';
-    errEl.style.display = 'block'; return;
-  }
-
-  CREDS = { subdomain, email, token };
-  IS_DEMO = false;
-  document.getElementById('loading-overlay').style.display = 'flex';
-
-  try {
-    await fetchAll();
-    document.getElementById('config-panel').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    document.getElementById('subdomain-label').textContent = subdomain + '.zendesk.com';
-    startCountdown();
-  } catch(e) {
-    document.getElementById('loading-overlay').style.display = 'none';
-    errEl.innerHTML = `❌ <b>Erro:</b> ${e.message}<br><small>Verifique se o proxy está rodando: <code>node server.js</code></small>`;
-    errEl.style.display = 'block';
-  }
-}
-
-// ── API via PROXY ──────────────────────────────────────────
-async function zdGet(path) {
-  const url = `${PROXY}/zd/${path}`;
-  const res = await fetch(url, {
-    headers: {
-      'subdomain': CREDS.subdomain,
-      'email':     CREDS.email,
-      'token':     CREDS.token,
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zendesk · Central de Atendimento</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060a10;
+      --surface: #0d1520;
+      --surface2: #111d2e;
+      --border: rgba(0, 200, 255, 0.12);
+      --accent: #00c8ff;
+      --accent2: #00ff9d;
+      --accent3: #ff6b35;
+      --warn: #ffcc00;
+      --red: #ff3d5a;
+      --text: #e8f4ff;
+      --muted: #5a7a99;
+      --card-glow: 0 0 30px rgba(0, 200, 255, 0.07);
     }
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({}));
-    throw new Error(err.description || err.error || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
 
-// ── HELPERS ────────────────────────────────────────────────
-// todayUTC(): meia-noite de hoje no fuso local → string ISO UTC
-// Corrige o problema de datas: tickets criados às 14h no UTC-3
-// apareciam como "ontem" se usássemos apenas a data UTC
-function todayUTC() {
-  const now = new Date();
-  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  return midnight.toISOString();
-}
-function todayISO() { return new Date().toISOString().split('T')[0]; }
-function weekStartUTC() {
-  const d = new Date(), day = d.getDay();
-  const mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (day===0?6:day-1), 0, 0, 0);
-  return mon.toISOString();
-}
-function weekStartISO() {
-  const d = new Date(), day = d.getDay();
-  const mon = new Date(d); mon.setDate(d.getDate() - (day===0?6:day-1));
-  return mon.toISOString().split('T')[0];
-}
-function daysOfWeek() {
-  const days=[], now=new Date(), day=now.getDay();
-  const mon=new Date(now); mon.setDate(now.getDate()-(day===0?6:day-1));
-  for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);days.push(d);}
-  return days;
-}
-const COLORS=[['#00c8ff','#003a52'],['#00ff9d','#003320'],['#ff6b35','#3a1a0a'],['#ff3d5a','#3a0010'],['#ffcc00','#3a2e00'],['#c77dff','#2a0050'],['#4cc9f0','#002a3a'],['#f72585','#3a0020']];
-function avatarColor(i){return COLORS[i%COLORS.length];}
-function initials(n){return n.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'??';}
-function setKPI(id,val){const el=document.getElementById(id);if(el){el.textContent=val;el.classList.remove('update-flash');void el.offsetWidth;el.classList.add('update-flash');}}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-// ── FETCH ALL ──────────────────────────────────────────────
-async function fetchAll() {
-  if (IS_DEMO) { renderDemo(); return; }
-  const todayDT = todayUTC();       // ex: "2026-03-20T03:00:00.000Z"
-  const weekDT  = weekStartUTC();   // ex: "2026-03-17T03:00:00.000Z"
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
 
-  // Queries corrigidas:
-  // - Datas com hora UTC (meia-noite local) para não perder tickets do dia
-  // - status:solved OR status:closed para "resolvidos hoje"
-  // - status:open OR status:pending separados com OR para "em andamento"
-  const [solvedToday, openedToday, inProgress, solvedWeek, urgentOpen, recent] = await Promise.all([
-    zdGet(`api/v2/search.json?query=type:ticket%20status:solved%20updated_at>=${encodeURIComponent(todayDT)}&per_page=100`),
-    zdGet(`api/v2/search.json?query=type:ticket%20created_at>=${encodeURIComponent(todayDT)}&per_page=100`),
-    zdGet(`api/v2/search.json?query=type:ticket%20status%3Aopen%20OR%20status%3Apending&per_page=100`),
-    zdGet(`api/v2/search.json?query=type:ticket%20status:solved%20updated_at>=${encodeURIComponent(weekDT)}&per_page=100`),
-    zdGet(`api/v2/search.json?query=type:ticket%20priority:urgent%20status:open&per_page=100`),
-    zdGet(`api/v2/search.json?query=type:ticket&sort_by=created_at&sort_order=desc&per_page=10`),
-  ]);
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 200, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 200, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-  setKPI('kpi-solved-today', solvedToday.count||0);
-  setKPI('kpi-open-today',   openedToday.count||0);
-  setKPI('kpi-pending',      inProgress.count||0);
-  setKPI('kpi-week',         solvedWeek.count||0);
-  setKPI('kpi-urgent',       urgentOpen.count||0);
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent), transparent);
+      z-index: 100;
+      animation: scan 3s linear infinite;
+    }
 
-  renderStatusBreakdown(inProgress.results||[], inProgress.count||0);
-  renderRecentTickets(recent.results||[]);
-  renderAgentTable(buildAgentData(solvedToday.results||[], solvedWeek.results||[]));
-  renderWeekChart(buildWeekData(solvedWeek.results||[]));
-  renderSLA(solvedToday.count||0, (solvedToday.count||0)+(inProgress.count||0));
+    @keyframes scan {
 
-  document.getElementById('loading-overlay').style.display = 'none';
-}
+      0%,
+      100% {
+        opacity: 1
+      }
 
-// ── BUILD DATA ─────────────────────────────────────────────
-function buildAgentData(todayT, weekT) {
-  const td={}, wk={}, names={};
-  todayT.forEach(t=>{if(t.assignee_id){td[t.assignee_id]=(td[t.assignee_id]||0)+1;if(t.assignee&&t.assignee.name)names[t.assignee_id]=t.assignee.name;}});
-  weekT.forEach(t=>{if(t.assignee_id){wk[t.assignee_id]=(wk[t.assignee_id]||0)+1;if(t.assignee&&t.assignee.name)names[t.assignee_id]=t.assignee.name;}});
-  return Object.keys(td).map(id=>({id,name:names[id]||`Agente #${id}`,count:td[id],week:wk[id]||0}))
-    .sort((a,b)=>b.count-a.count).slice(0,8);
-}
+      50% {
+        opacity: .4
+      }
+    }
 
-function buildWeekData(tickets) {
-  const map={};
-  tickets.forEach(t=>{const d=(t.updated_at||'').split('T')[0];map[d]=(map[d]||0)+1;});
-  return daysOfWeek().map(d=>{
-    const iso=d.toISOString().split('T')[0];
-    return {label:d.toLocaleDateString('pt-BR',{weekday:'short'}),count:map[iso]||0,isToday:iso===todayISO()};
-  });
-}
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      padding: 18px 24px 24px;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
 
-// ── RENDER FUNCTIONS ───────────────────────────────────────
-const STATUS_CFG={open:{label:'Abertos',color:'#00c8ff'},pending:{label:'Pendentes',color:'#ffcc00'},hold:{label:'Em espera',color:'#ff6b35'},solved:{label:'Resolvidos',color:'#00ff9d'},closed:{label:'Fechados',color:'#5a7a99'}};
+    /* HEADER */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
 
-function renderStatusBreakdown(tickets, total) {
-  const map={};
-  tickets.forEach(t=>{map[t.status]=(map[t.status]||0)+1;});
-  document.getElementById('total-badge').textContent=`total: ${total}`;
-  const keys=['open','pending','hold','solved','closed'].filter(k=>map[k]>0);
-  const max=Math.max(...keys.map(k=>map[k]),1);
-  document.getElementById('status-list').innerHTML = keys.map(k=>{
-    const cfg=STATUS_CFG[k]||{label:k,color:'#888'};
-    const pct=Math.round((map[k]/max)*100);
-    return `<div><div class="status-meta"><div class="status-name"><div class="status-dot" style="background:${cfg.color}"></div>${cfg.label}</div><div class="status-count" style="color:${cfg.color}">${map[k]}</div></div><div class="status-bar-bg"><div class="status-bar-fill" style="width:${pct}%;background:${cfg.color}"></div></div></div>`;
-  }).join('')||'<div style="color:var(--muted);font-size:12px">Sem dados</div>';
-}
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
 
-function renderRecentTickets(tickets) {
-  const SC={open:'var(--accent)',pending:'var(--warn)',hold:'var(--accent3)',solved:'var(--accent2)',closed:'var(--muted)'};
-  const PC={urgent:'p-urgent',high:'p-high',normal:'p-normal',low:'p-low'};
-  const PL={urgent:'🔴 Urgente',high:'🟠 Alta',normal:'🔵 Normal',low:'⚪ Baixa'};
-  document.getElementById('ticket-list').innerHTML = tickets.slice(0,8).map(t=>{
-    const sc=SC[t.status]||'var(--muted)';
-    const time=new Date(t.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    return `<div class="ticket-item" style="border-left-color:${sc}"><div><div class="ticket-id">#${t.id}</div><div class="ticket-subject">${t.subject||'(sem assunto)'}</div><div class="ticket-meta">${time} · ${STATUS_CFG[t.status]?.label||t.status}</div></div><div><span class="priority-badge ${PC[t.priority]||'p-normal'}">${PL[t.priority]||'Normal'}</span></div></div>`;
-  }).join('')||'<div style="color:var(--muted);font-size:12px">Sem tickets recentes</div>';
-}
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      box-shadow: 0 0 20px rgba(0, 200, 255, .4);
+    }
 
-function renderAgentTable(agents) {
-  if(!agents.length){document.getElementById('agent-tbody').innerHTML='<tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px 8px">Nenhum ticket resolvido hoje ainda</td></tr>';return;}
-  const max=Math.max(...agents.map(a=>a.count),1);
-  document.getElementById('agent-tbody').innerHTML = agents.map((a,i)=>{
-    const [fg,bg]=avatarColor(i);
-    const pct=Math.round((a.count/max)*100);
-    const slaClass=i===0?'sla-ok':i<3?'sla-ok':i<5?'sla-warn':'sla-warn';
-    const slaText=slaClass==='sla-ok'?'✓ OK':'⚠ Risco';
-    return `<tr class="agent-row"><td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:11px">${i+1}</td><td><div class="agent-name-cell"><div class="avatar" style="background:${bg};color:${fg}">${initials(a.name)}</div><div class="agent-name">${a.name}</div></div></td><td><div class="bar-mini"><div class="bar-mini-fill" style="width:${pct}%;background:var(--accent2)"></div></div><span class="badge-num" style="color:var(--accent2)">${a.count}</span></td><td><span class="badge-num" style="color:var(--accent)">${a.week}</span></td><td style="text-align:right"><span class="sla-badge ${slaClass}">${slaText}</span></td></tr>`;
-  }).join('');
-}
+    .logo-text h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+      line-height: 1;
+    }
 
-function renderWeekChart(days) {
-  const max=Math.max(...days.map(d=>d.count),1);
-  document.getElementById('week-chart').innerHTML = days.map(d=>{
-    const h=Math.max(Math.round((d.count/max)*100),d.count>0?4:0);
-    const color=d.isToday?'var(--accent)':'rgba(0,200,255,.3)';
-    return `<div class="week-col"><div class="week-val" style="color:${d.isToday?'var(--accent)':'var(--muted)'}">${d.count||''}</div><div class="week-bar-wrap"><div class="week-bar${d.isToday?' today':''}" style="height:${h}%;background:${color}"></div></div><div class="week-label" style="${d.isToday?'color:var(--accent)':''}">${d.label}</div></div>`;
-  }).join('');
-}
+    .logo-text span {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+    }
 
-function renderSLA(resolved, total) {
-  const res=total>0?Math.round((resolved/total)*100):0;
-  const slas=[
-    {name:'Taxa de Resolução Hoje',pct:res,color:res>=70?'var(--accent2)':res>=40?'var(--warn)':'var(--red)'},
-    {name:'SLA Primeira Resposta',pct:Math.min(100,res+12),color:'var(--accent)'},
-    {name:'Tickets Dentro do Prazo',pct:Math.min(100,res+8),color:res>=60?'var(--accent2)':'var(--warn)'},
-  ];
-  document.getElementById('sla-section').innerHTML = slas.map(s=>`<div><div class="sla-meta"><div class="sla-name">${s.name}</div><div class="sla-pct" style="color:${s.color}">${s.pct}%</div></div><div class="sla-bar-bg"><div class="sla-bar-fill" style="width:${s.pct}%;background:${s.color}"></div></div></div>`).join('');
-}
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
 
-// ── DEMO ───────────────────────────────────────────────────
-function loadDemoMode() {
-  IS_DEMO=true;
-  document.getElementById('config-panel').style.display='none';
-  document.getElementById('dashboard').style.display='block';
-  document.getElementById('subdomain-label').textContent='demo.zendesk.com';
-  document.getElementById('demo-banner').style.display='flex';
-  renderDemo(); startCountdown();
-}
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(0, 255, 157, .08);
+      border: 1px solid rgba(0, 255, 157, .25);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--accent2);
+      letter-spacing: 1px;
+    }
 
-function renderDemo() {
-  setKPI('kpi-solved-today',47);setKPI('kpi-open-today',63);setKPI('kpi-pending',18);setKPI('kpi-week',214);setKPI('kpi-urgent',3);
-  renderStatusBreakdown([...Array(4).fill({status:'open'}),...Array(3).fill({status:'pending'}),...Array(2).fill({status:'hold'})],9);
-  renderRecentTickets([
-    {id:101283,subject:'Erro ao acessar portal do cliente',status:'open',priority:'urgent',created_at:new Date().toISOString()},
-    {id:101282,subject:'Dúvida sobre cobrança de fatura',status:'pending',priority:'high',created_at:new Date(Date.now()-600000).toISOString()},
-    {id:101281,subject:'Solicitação de segunda via de NF',status:'solved',priority:'normal',created_at:new Date(Date.now()-1200000).toISOString()},
-    {id:101280,subject:'Lentidão no sistema ERP',status:'open',priority:'high',created_at:new Date(Date.now()-1800000).toISOString()},
-    {id:101279,subject:'Problema com autenticação 2FA',status:'pending',priority:'urgent',created_at:new Date(Date.now()-2400000).toISOString()},
-    {id:101278,subject:'Atualização cadastral de endereço',status:'solved',priority:'low',created_at:new Date(Date.now()-3000000).toISOString()},
-    {id:101277,subject:'Integração API retornando 500',status:'open',priority:'urgent',created_at:new Date(Date.now()-3600000).toISOString()},
-    {id:101276,subject:'Cancelamento de assinatura',status:'hold',priority:'normal',created_at:new Date(Date.now()-4200000).toISOString()},
-  ]);
-  renderAgentTable([
-    {name:'Ana Beatriz Silva',count:12,week:51},{name:'Carlos Eduardo M.',count:10,week:44},
-    {name:'Fernanda Costa',count:9,week:38},{name:'Rafael Oliveira',count:8,week:42},
-    {name:'Juliana Pereira',count:5,week:29},{name:'Marcos Andrade',count:3,week:10},
-  ]);
-  const today=new Date().getDay();
-  renderWeekChart(daysOfWeek().map((d,i)=>({label:d.toLocaleDateString('pt-BR',{weekday:'short'}),count:[32,41,38,52,47,28,0][i]||0,isToday:d.toISOString().split('T')[0]===todayISO()})));
-  renderSLA(47,65);
-  document.getElementById('loading-overlay').style.display='none';
-}
-</script>
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .4;
+        transform: scale(.8)
+      }
+    }
+
+    .clock {
+      font-family: 'Space Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      text-shadow: 0 0 20px rgba(0, 200, 255, .5);
+    }
+
+    .date-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .next-update {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .next-update span {
+      color: var(--accent2);
+    }
+
+    .sound-toggle {
+      background: rgba(0, 200, 255, .08);
+      border: 1px solid rgba(0, 200, 255, .25);
+      color: var(--accent);
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      font-family: inherit;
+    }
+
+    .sound-toggle:hover {
+      background: rgba(0, 200, 255, .15);
+      transform: scale(1.05);
+    }
+
+    .sound-toggle.muted {
+      color: var(--muted);
+      border-color: var(--border);
+      background: transparent;
+    }
+
+    /* CONFIG */
+    #config-panel {
+      background: var(--surface);
+      border: 1px solid rgba(0, 200, 255, .3);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 520px;
+      margin: 40px auto;
+      box-shadow: var(--card-glow);
+    }
+
+    #config-panel h2 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    #config-panel p {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .field-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    input[type=text],
+    input[type=password] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0, 200, 255, .1);
+    }
+
+    .connect-btn {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 8px;
+      transition: opacity .2s, transform .1s;
+    }
+
+    .connect-btn:hover {
+      opacity: .9;
+      transform: translateY(-1px);
+    }
+
+    .connect-btn.demo {
+      background: linear-gradient(135deg, #ff6b35, #ffcc00);
+      margin-top: 10px;
+    }
+
+    .hint-text {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 14px;
+      font-family: 'Space Mono', monospace;
+      line-height: 1.7;
+    }
+
+    .hint-text code {
+      background: rgba(0, 200, 255, .1);
+      color: var(--accent);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    .error-msg {
+      background: rgba(255, 61, 90, .1);
+      border: 1px solid rgba(255, 61, 90, .3);
+      color: var(--red);
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-bottom: 16px;
+      font-family: 'Space Mono', monospace;
+      display: none;
+      line-height: 1.6;
+    }
+
+    /* DASHBOARD */
+    #dashboard {
+      display: none;
+    }
+
+    .demo-banner {
+      background: rgba(255, 204, 0, .1);
+      border: 1px solid rgba(255, 204, 0, .3);
+      color: var(--warn);
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      letter-spacing: 1px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* KPI */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 18px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--card-glow);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent-color, var(--accent));
+      opacity: .6;
+    }
+
+    .kpi-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      margin-bottom: 10px;
+    }
+
+    .kpi-value {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--accent-color, var(--accent));
+      text-shadow: 0 0 30px var(--accent-color, rgba(0, 200, 255, .4));
+      font-family: 'Space Mono', monospace;
+      transition: all .4s;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .kpi-icon {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      font-size: 32px;
+      opacity: .07;
+    }
+
+    /* MAIN GRID */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.3fr;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: var(--card-glow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    .card-badge {
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      padding: 3px 9px;
+      border-radius: 10px;
+      background: rgba(0, 200, 255, .1);
+      color: var(--accent);
+      border: 1px solid rgba(0, 200, 255, .2);
+    }
+
+    /* STATUS */
+    .status-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      align-items: center;
+    }
+
+    .status-name {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-count {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .status-bar-bg {
+      height: 6px;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .status-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .8s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* TICKETS */
+    .ticket-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ticket-item {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      border-left: 3px solid transparent;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .ticket-id {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .ticket-subject {
+      font-size: 12px;
+      font-weight: 600;
+      /* Permite até 2 linhas — se ultrapassar, mostra "..." */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      /* permite quebra de linha */
+      line-height: 1.4;
+      max-height: 2.8em;
+      /* 2 linhas × 1.4 line-height */
+      word-break: break-word;
+      /* quebra palavras longas se necessário */
+    }
+
+    .ticket-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .priority-badge {
+      font-size: 9px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .p-urgent {
+      background: rgba(255, 61, 90, .15);
+      color: var(--red);
+      border: 1px solid rgba(255, 61, 90, .3)
+    }
+
+    .p-high {
+      background: rgba(255, 107, 53, .15);
+      color: var(--accent3);
+      border: 1px solid rgba(255, 107, 53, .3)
+    }
+
+    .p-normal {
+      background: rgba(0, 200, 255, .1);
+      color: var(--accent);
+      border: 1px solid rgba(0, 200, 255, .2)
+    }
+
+    .p-low {
+      background: rgba(90, 122, 153, .15);
+      color: var(--muted);
+      border: 1px solid rgba(90, 122, 153, .2)
+    }
+
+    /* AGENTS */
+    .agent-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .agent-table th {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      padding: 0 8px 12px;
+      text-align: left;
+      font-weight: 400;
+    }
+
+    .agent-table th:last-child {
+      text-align: right;
+    }
+
+    .agent-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .agent-row td {
+      padding: 10px 8px;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .agent-name-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .agent-name {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .badge-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .bar-mini {
+      height: 4px;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 4px;
+      overflow: hidden;
+      width: 60px;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    .bar-mini-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .8s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .sla-badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-align: center;
+      display: inline-block;
+    }
+
+    .sla-ok {
+      background: rgba(0, 255, 157, .1);
+      color: var(--accent2);
+      border: 1px solid rgba(0, 255, 157, .2)
+    }
+
+    .sla-warn {
+      background: rgba(255, 204, 0, .1);
+      color: var(--warn);
+      border: 1px solid rgba(255, 204, 0, .2)
+    }
+
+    .sla-bad {
+      background: rgba(255, 61, 90, .1);
+      color: var(--red);
+      border: 1px solid rgba(255, 61, 90, .2)
+    }
+
+    /* BOTTOM */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .week-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 80px;
+      padding-top: 10px;
+    }
+
+    .week-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .week-bar-wrap {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .week-bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+      transition: height .8s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .week-bar.today {
+      box-shadow: 0 0 12px rgba(0, 200, 255, .4);
+    }
+
+    .week-label {
+      font-size: 9px;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .week-val {
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+    }
+
+    .sla-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sla-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+
+    .sla-name {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .sla-pct {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .sla-bar-bg {
+      height: 8px;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .sla-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width .8s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* LOADING */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .loading-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+
+    .update-flash {
+      animation: flashIn .6s ease;
+    }
+
+    @keyframes flashIn {
+      0% {
+        opacity: .5
+      }
+
+      100% {
+        opacity: 1
+      }
+    }
+
+    /* ── Ticket list auto-scroll ── */
+    /* O card do meio precisa ser flex para o scroll crescer */
+    .card-ticket {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ticket-list {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      min-height: 260px;
+    }
+
+    .ticket-scroll-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      animation: ticketScroll 30s linear infinite;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+    }
+
+    .ticket-scroll-inner:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes ticketScroll {
+      0% {
+        transform: translateY(0);
+      }
+
+      100% {
+        transform: translateY(-50%);
+      }
+    }
+
+    /* ── Unassigned tickets ── */
+    .unassigned-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .unassigned-header {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--warn);
+      font-family: 'Space Mono', monospace;
+      padding: 8px 0 4px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .unassigned-item {
+      background: rgba(255, 204, 0, 0.05);
+      border-left: 3px solid var(--warn);
+      border-radius: 0 8px 8px 0;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .unassigned-subject {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      line-height: 1.4;
+      max-height: 2.8em;
+      word-break: break-word;
+    }
+
+    .unassigned-time {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    /* ── Agent load (tickets em aberto por agente) ── */
+    .agent-load-wrap {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .agent-load-title {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      margin-bottom: 10px;
+    }
+
+    .agent-load-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .agent-load-name {
+      font-size: 11px;
+      color: var(--text);
+      width: 100px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+
+    .agent-load-bar-track {
+      flex: 1;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .agent-load-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.8s cubic-bezier(.4, 0, .2, 1);
+      display: flex;
+      align-items: center;
+      padding-left: 6px;
+    }
+
+    .agent-load-bar-label {
+      font-size: 9px;
+      font-family: 'Space Mono', monospace;
+      color: rgba(0, 0, 0, 0.8);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .agent-load-count {
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      flex-shrink: 0;
+      width: 20px;
+      text-align: right;
+    }
+
+    .agent-load-alert {
+      font-size: 9px;
+      letter-spacing: 1px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .load-high {
+      background: rgba(255, 61, 90, .15);
+      color: var(--red);
+      border: 1px solid rgba(255, 61, 90, .3);
+    }
+
+    .load-med {
+      background: rgba(255, 204, 0, .1);
+      color: var(--warn);
+      border: 1px solid rgba(255, 204, 0, .2);
+    }
+
+    .load-ok {
+      background: rgba(0, 255, 157, .08);
+      color: var(--accent2);
+      border: 1px solid rgba(0, 255, 157, .15);
+    }
+
+    /* ── Agent mini bar chart ── */
+    .agent-chart-wrap {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .agent-chart-title {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      margin-bottom: 12px;
+    }
+
+    .agent-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+
+    .agent-bar-name {
+      font-size: 10px;
+      color: var(--text);
+      width: 90px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+
+    .agent-bar-track {
+      flex: 1;
+      height: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .agent-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(.4, 0, .2, 1);
+      position: relative;
+    }
+
+    .agent-bar-val {
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      flex-shrink: 0;
+      width: 24px;
+      text-align: right;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+
+    <!-- CONFIG -->
+    <div id="config-panel">
+      <h2>⚡ Conectar ao Zendesk</h2>
+      <p>O painel roda localmente via proxy. Seus dados nunca saem da sua máquina.</p>
+      <div id="error-msg" class="error-msg"></div>
+      <div class="field-group">
+        <label>Subdomínio Zendesk</label>
+        <input type="text" id="inp-subdomain" placeholder="c-innovation" />
+      </div>
+      <div class="field-group">
+        <label>Token OAuth (Bearer)</label>
+        <input type="password" id="inp-token" placeholder="Cole seu token OAuth aqui" />
+      </div>
+      <button class="connect-btn" onclick="connectZendesk()">CONECTAR E INICIAR PAINEL</button>
+      <button class="connect-btn demo" onclick="loadDemoMode()">▶ VER DEMO (SEM CREDENCIAIS)</button>
+      <div class="hint-text">
+        📍 Token OAuth: <code>Admin Center → Apps e integrações → APIs → APIs do Zendesk → Clientes OAuth</code> (ou via ENV no container: <code>ZENDESK_SUBDOMAIN</code> e <code>ZENDESK_OAUTH_TOKEN</code>)
+      </div>
+    </div>
+
+
+    <!-- DASHBOARD -->
+    <div id="dashboard">
+      <header>
+        <div class="logo-area">
+          <div class="logo-icon">ZD</div>
+          <div class="logo-text">
+            <h1>Central de Atendimento</h1>
+            <span id="subdomain-label">—</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="demo-banner" id="demo-banner">⚠ MODO DEMO</div>
+          <div class="live-badge">
+            <div class="live-dot"></div>LIVE
+          </div>
+          <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()"
+            title="Ativar/desativar som de novo ticket">🔊</button>
+          <div>
+            <div class="clock" id="clock">00:00:00</div>
+            <div class="date-label" id="date-label">—</div>
+            <div class="next-update">Próx. atualização: <span id="countdown">--:--</span></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Áudios. Troque os arquivos em public/sounds/ para mudar cada som. -->
+      <audio id="new-ticket-audio" preload="auto">
+        <source src="sounds/new-ticket.mp3" type="audio/mpeg">
+        <source src="sounds/new-ticket.wav" type="audio/wav">
+        <source src="sounds/new-ticket.ogg" type="audio/ogg">
+      </audio>
+      <audio id="all-clear-audio" preload="auto">
+        <source src="sounds/all-clear.mp3" type="audio/mpeg">
+        <source src="sounds/all-clear.wav" type="audio/wav">
+        <source src="sounds/all-clear.ogg" type="audio/ogg">
+      </audio>
+      <audio id="many-unassigned-audio" preload="auto">
+        <source src="sounds/many-unassigned.mp3" type="audio/mpeg">
+        <source src="sounds/many-unassigned.wav" type="audio/wav">
+        <source src="sounds/many-unassigned.ogg" type="audio/ogg">
+      </audio>
+
+      <div class="kpi-row">
+        <div class="kpi-card" style="--accent-color:var(--accent2)">
+          <div class="kpi-label">Resolvidos Hoje</div>
+          <div class="kpi-value" id="kpi-solved-today">—</div>
+          <div class="kpi-sub">tickets encerrados</div>
+          <div class="kpi-icon">✅</div>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--accent)">
+          <div class="kpi-label">Abertos Hoje</div>
+          <div class="kpi-value" id="kpi-open-today">—</div>
+          <div class="kpi-sub">criados hoje</div>
+          <div class="kpi-icon">📬</div>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--accent3)">
+          <div class="kpi-label">Em Andamento</div>
+          <div class="kpi-value" id="kpi-pending">—</div>
+          <div class="kpi-sub">aguardando resolução</div>
+          <div class="kpi-icon">⏳</div>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--warn)">
+          <div class="kpi-label">Semana Corrente</div>
+          <div class="kpi-value" id="kpi-week">—</div>
+          <div class="kpi-sub">resolvidos na semana</div>
+          <div class="kpi-icon">📅</div>
+        </div>
+        <div class="kpi-card" style="--accent-color:var(--red)">
+          <div class="kpi-label">Urgentes Abertos</div>
+          <div class="kpi-value" id="kpi-urgent">—</div>
+          <div class="kpi-sub">prioridade urgente</div>
+          <div class="kpi-icon">🔴</div>
+        </div>
+      </div>
+
+      <div class="main-grid">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Status dos Tickets</div>
+            <div class="card-badge" id="total-badge">total: —</div>
+          </div>
+          <div class="status-list" id="status-list">
+            <div style="color:var(--muted);font-size:12px">Carregando...</div>
+          </div>
+          <div class="unassigned-list" id="unassigned-list"></div>
+        </div>
+        <div class="card card-ticket">
+          <div class="card-header">
+            <div class="card-title">Últimos Tickets</div>
+            <div class="card-badge" id="ticket-count-badge">recentes</div>
+          </div>
+          <div class="ticket-list" id="ticket-list">
+            <div class="ticket-scroll-inner" id="ticket-scroll-inner">
+              <div style="color:var(--muted);font-size:12px">Carregando...</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Ranking de Agentes — Hoje</div>
+          </div>
+          <table class="agent-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Agente</th>
+                <th>Hoje</th>
+                <th>Semana</th>
+                <th style="text-align:right">SLA</th>
+              </tr>
+            </thead>
+            <tbody id="agent-tbody">
+              <tr>
+                <td colspan="5" style="color:var(--muted);font-size:12px;padding:12px 8px">Carregando...</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="agent-load-wrap" id="agent-load-wrap" style="display:none">
+            <div class="agent-load-title">⚡ Carga atual — tickets em aberto por agente</div>
+            <div id="agent-load-bars"></div>
+          </div>
+          <div class="agent-chart-wrap" id="agent-chart-wrap" style="display:none">
+            <div class="agent-chart-title">Últimas 2 semanas — tickets resolvidos por agente</div>
+            <div id="agent-bar-chart"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-row">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Tickets Resolvidos — Semana</div>
+          </div>
+          <div class="week-chart" id="week-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Cumprimento de SLA</div>
+          </div>
+          <div class="sla-section" id="sla-section"></div>
+        </div>
+      </div>
+
+      <!-- RODAPÉ -->
+      <footer style="
+      margin-top:20px;
+      padding:14px 24px;
+      border-top:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    ">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="
+          width:32px;height:32px;
+          background:linear-gradient(135deg,var(--accent),var(--accent2));
+          border-radius:8px;
+          display:flex;align-items:center;justify-content:center;
+          font-size:14px;font-weight:800;color:#000;
+          font-family:'Space Mono',monospace;
+          box-shadow:0 0 12px rgba(0,200,255,0.3);
+          flex-shrink:0;
+        ">ZD</div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text);letter-spacing:0.5px">Ricardo Meleiro</div>
+            <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace">Zendesk Dashboard ·
+              C-Innovation</div>
+          </div>
+        </div>
+
+        <a href="https://github.com/ricardomeleiro/zendesk-dashboard" target="_blank" style="
+           display:flex;align-items:center;gap:8px;
+           text-decoration:none;
+           background:rgba(0,200,255,0.06);
+           border:1px solid rgba(0,200,255,0.2);
+           border-radius:20px;
+           padding:6px 14px;
+           transition:all 0.2s;
+         " onmouseover="this.style.background='rgba(0,200,255,0.14)';this.style.borderColor='rgba(0,200,255,0.5)'"
+          onmouseout="this.style.background='rgba(0,200,255,0.06)';this.style.borderColor='rgba(0,200,255,0.2)'">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              fill="var(--accent)" />
+          </svg>
+          <span
+            style="font-size:11px;color:var(--accent);font-family:'Space Mono',monospace;letter-spacing:0.5px">ricardomeleiro/zendesk-dashboard</span>
+        </a>
+      </footer>
+
+    </div>
+  </div>
+
+  <div class="loading-overlay" id="loading-overlay" style="display:none">
+    <div class="spinner"></div>
+    <div class="loading-text">BUSCANDO DADOS...</div>
+  </div>
+
+  <script>
+    // Usa automaticamente o mesmo host/porta de onde o painel foi carregado
+    // Funciona tanto em localhost quanto em servidor remoto via Portainer
+    // PROXY = origin + basePath (funciona em subdomínio raiz OU em subpath ex: /atendimentos)
+    const PROXY = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '');
+
+    // ── CONFIGURAÇÃO DE INTERVALO ──────────────────────────────
+    // Altere REFRESH_SECONDS para mudar o tempo entre atualizações
+    // Exemplos: 60 = 1 min | 120 = 2 min | 300 = 5 min | 600 = 10 min
+    const REFRESH_SECONDS = 120; // 2 minutos
+
+    // ── CONFIGURAÇÃO DE SOM ────────────────────────────────────
+    // Para trocar cada som, substitua o arquivo correspondente em public/sounds/
+    // (aceita .mp3, .wav e .ogg — veja public/sounds/README.txt)
+    //   new-ticket.mp3        → toca a cada ticket novo
+    //   all-clear.mp3         → toca quando os chamados abertos/pendentes zeram
+    //   many-unassigned.mp3   → toca quando os não atribuídos passam do limiar
+    const SOUND_VOLUME = 0.7; // 0.0 a 1.0
+    const SOUND_MAX_PLAYS_PER_REFRESH = 1; // toca 1x mesmo que chegue N tickets juntos
+    const UNASSIGNED_ALERT_THRESHOLD = 15; // toca "many-unassigned" quando ultrapassar
+
+    let CREDS = {};
+    let IS_DEMO = false;
+    let countdownSecs = REFRESH_SECONDS;
+    let AGENT_NAME_CACHE = {}; // cache global: { id → nome }
+    let CUSTOM_STATUS_MAP = {}; // { id → { label, category } }
+    let EM_ANDAMENTO_IDS = new Set(); // IDs dos custom statuses "Em andamento"
+    let cdTimer = null;
+    let SEEN_TICKET_IDS = new Set(); // IDs já vistos — para detectar tickets novos
+    let IS_FIRST_FETCH = true;       // não toca som no primeiro carregamento
+    let SOUND_MUTED = localStorage.getItem('zd_sound_muted') === '1';
+    // Estados anteriores — para tocar os alertas só na TRANSIÇÃO, não a cada refresh
+    let PREV_TOTAL_ACTIVE = null;
+    let PREV_UNASSIGNED_HIGH = false;
+
+    // ── CLOCK ──────────────────────────────────────────────────
+    setInterval(() => {
+      const n = new Date();
+      document.getElementById('clock').textContent = n.toLocaleTimeString('pt-BR');
+      document.getElementById('date-label').textContent = n.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    }, 1000);
+
+    // ── COUNTDOWN ──────────────────────────────────────────────
+    function startCountdown() {
+      countdownSecs = REFRESH_SECONDS;
+      if (cdTimer) clearInterval(cdTimer);
+      cdTimer = setInterval(() => {
+        countdownSecs--;
+        const m = String(Math.floor(countdownSecs / 60)).padStart(2, '0');
+        const s = String(countdownSecs % 60).padStart(2, '0');
+        const el = document.getElementById('countdown');
+        if (el) el.textContent = `${m}:${s}`;
+        if (countdownSecs <= 0) {
+          clearInterval(cdTimer);
+          fetchAll().finally(() => startCountdown()); // reinicia SEMPRE após fetch
+        }
+      }, 1000);
+    }
+
+    // ── SOM DE NOVO TICKET ─────────────────────────────────────
+    function updateSoundToggleUI() {
+      const btn = document.getElementById('sound-toggle');
+      if (!btn) return;
+      btn.textContent = SOUND_MUTED ? '🔇' : '🔊';
+      btn.classList.toggle('muted', SOUND_MUTED);
+      btn.title = SOUND_MUTED ? 'Som desativado — clique para ativar' : 'Som ativado — clique para silenciar';
+    }
+
+    function toggleSound() {
+      SOUND_MUTED = !SOUND_MUTED;
+      localStorage.setItem('zd_sound_muted', SOUND_MUTED ? '1' : '0');
+      updateSoundToggleUI();
+      // Toca uma prévia quando reativa (também serve como "unlock" do autoplay)
+      if (!SOUND_MUTED) playSound('new-ticket-audio', true);
+    }
+
+    function playSound(audioId, isPreview = false) {
+      if (SOUND_MUTED && !isPreview) return;
+      const audio = document.getElementById(audioId);
+      if (!audio) return;
+      try {
+        audio.volume = SOUND_VOLUME;
+        audio.currentTime = 0;
+        const p = audio.play();
+        if (p && p.catch) p.catch(err => console.warn('[sound] Nao foi possivel tocar %s:', audioId, err.message));
+      } catch (e) {
+        console.warn('[sound] Erro ao tocar %s:', audioId, e.message);
+      }
+    }
+
+    // "Unlock" todos os áudios ao mesmo tempo — chamado no clique inicial do usuário
+    function unlockAllAudio() {
+      ['new-ticket-audio', 'all-clear-audio', 'many-unassigned-audio'].forEach(id => {
+        const a = document.getElementById(id);
+        if (!a) return;
+        a.volume = 0;
+        a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = SOUND_VOLUME; }).catch(() => { });
+      });
+    }
+
+    // Compara IDs atuais com os já vistos e toca o som se algum for novo.
+    // No primeiro fetch apenas popula o cache — evita disparar o som com
+    // todos os tickets abertos existentes.
+    function detectAndAnnounceNewTickets(activeTickets) {
+      const currentIds = new Set(activeTickets.map(t => t.id));
+      if (IS_FIRST_FETCH) {
+        SEEN_TICKET_IDS = currentIds;
+        IS_FIRST_FETCH = false;
+        console.log('[sound] Primeiro fetch — %d tickets registrados (sem som)', currentIds.size);
+        return;
+      }
+      const newOnes = [...currentIds].filter(id => !SEEN_TICKET_IDS.has(id));
+      if (newOnes.length > 0) {
+        console.log('[sound] %d ticket(s) novo(s):', newOnes.length, newOnes);
+        for (let i = 0; i < Math.min(newOnes.length, SOUND_MAX_PLAYS_PER_REFRESH); i++) {
+          playSound('new-ticket-audio');
+        }
+      }
+      SEEN_TICKET_IDS = currentIds;
+    }
+
+    // Toca "all-clear" quando o total de ativos ZERA (transição N>0 → 0).
+    // Toca "many-unassigned" quando o número de não atribuídos ULTRAPASSA o limiar
+    // (transição abaixo → acima). Só na transição — não repete a cada refresh.
+    function detectStateAlerts(totalActive, unassignedCount) {
+      // Zerou os chamados?
+      if (PREV_TOTAL_ACTIVE !== null && PREV_TOTAL_ACTIVE > 0 && totalActive === 0) {
+        console.log('[sound] Chamados zerados — tocando all-clear');
+        playSound('all-clear-audio');
+      }
+      PREV_TOTAL_ACTIVE = totalActive;
+
+      // Muitos não atribuídos?
+      const isHigh = unassignedCount >= UNASSIGNED_ALERT_THRESHOLD;
+      if (isHigh && !PREV_UNASSIGNED_HIGH) {
+        console.log('[sound] Nao atribuidos ultrapassou %d — tocando alerta', UNASSIGNED_ALERT_THRESHOLD);
+        playSound('many-unassigned-audio');
+      }
+      PREV_UNASSIGNED_HIGH = isHigh;
+    }
+
+    // ── CONNECT ────────────────────────────────────────────────
+    async function connectZendesk(fromEnv = false) {
+      const subdomainInp = document.getElementById('inp-subdomain').value.trim();
+      const tokenInp     = document.getElementById('inp-token').value.trim();
+      const errEl        = document.getElementById('error-msg');
+      errEl.style.display = 'none';
+
+      if (!fromEnv && (!subdomainInp || !tokenInp)) {
+        errEl.textContent = '⚠ Preencha todos os campos ou configure as variáveis de ambiente no container.';
+        errEl.style.display = 'block'; return;
+      }
+
+      CREDS = { subdomain: subdomainInp, token: tokenInp };
+      IS_DEMO = false;
+      document.getElementById('loading-overlay').style.display = 'flex';
+
+      try {
+        await fetchAll();
+        document.getElementById('config-panel').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        if (subdomainInp) {
+          document.getElementById('subdomain-label').textContent = subdomainInp + '.zendesk.com';
+        }
+        updateSoundToggleUI();
+        unlockAllAudio();
+        startCountdown();
+      } catch (e) {
+        document.getElementById('loading-overlay').style.display = 'none';
+        errEl.innerHTML = `❌ <b>Erro:</b> ${e.message}<br><small>Verifique suas credenciais ou as variáveis de ambiente do container.</small>`;
+        errEl.style.display = 'block';
+      }
+    }
+
+    // ── API via PROXY ──────────────────────────────────────────
+    async function zdGet(path) {
+      const url = `${PROXY}/zd/${path}`;
+      const headers = {};
+      if (CREDS.subdomain) headers['subdomain'] = CREDS.subdomain;
+      if (CREDS.token)     headers['token']     = CREDS.token;
+
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.description || err.error || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+      // ── HELPERS ────────────────────────────────────────────────
+      // todayUTC(): meia-noite de hoje no fuso local → string ISO UTC
+      // Corrige o problema de datas: tickets criados às 14h no UTC-3
+      // apareciam como "ontem" se usássemos apenas a data UTC
+      function todayUTC() {
+        const now = new Date();
+        const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        return midnight.toISOString();
+      }
+      function todayISO() { return new Date().toISOString().split('T')[0]; }
+      function weekStartUTC() {
+        const d = new Date(), day = d.getDay();
+        const mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - (day === 0 ? 6 : day - 1), 0, 0, 0);
+        return mon.toISOString();
+      }
+      function weekStartISO() {
+        const d = new Date(), day = d.getDay();
+        const mon = new Date(d); mon.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+        return mon.toISOString().split('T')[0];
+      }
+      function daysOfWeek() {
+        const days = [], now = new Date(), day = now.getDay();
+        const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+        for (let i = 0; i < 7; i++) { const d = new Date(mon); d.setDate(mon.getDate() + i); days.push(d); }
+        return days;
+      }
+      const COLORS = [['#00c8ff', '#003a52'], ['#00ff9d', '#003320'], ['#ff6b35', '#3a1a0a'], ['#ff3d5a', '#3a0010'], ['#ffcc00', '#3a2e00'], ['#c77dff', '#2a0050'], ['#4cc9f0', '#002a3a'], ['#f72585', '#3a0020']];
+      function avatarColor(i) { return COLORS[i % COLORS.length]; }
+      function initials(n) { return n.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '??'; }
+      function setKPI(id, val) { const el = document.getElementById(id); if (el) { el.textContent = val; el.classList.remove('update-flash'); void el.offsetWidth; el.classList.add('update-flash'); } }
+
+      // ── CUSTOM STATUSES ────────────────────────────────────────
+      // Busca os sub-status personalizados do Zendesk (ex: "Em andamento" vs "Aberto")
+      // ambos vivem dentro da categoria "open" mas têm custom_status_id diferente
+      async function fetchCustomStatuses() {
+        try {
+          const res = await zdGet('api/v2/custom_statuses');
+          (res.custom_statuses || []).forEach(cs => {
+            CUSTOM_STATUS_MAP[cs.id] = { label: cs.agent_label, category: cs.status_category };
+            if (cs.agent_label === 'Em andamento') EM_ANDAMENTO_IDS.add(cs.id);
+          });
+        } catch (e) {
+          console.warn('[custom_statuses]', e.message);
+        }
+      }
+
+      // ── FETCH ALL ──────────────────────────────────────────────
+      async function fetchAll() {
+        if (IS_DEMO) { renderDemo(); return; }
+        if (!Object.keys(CUSTOM_STATUS_MAP).length) await fetchCustomStatuses();
+
+        const todayDT = todayUTC();
+        const weekDT = weekStartUTC();
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        const twoWeeksDT = new Date(
+          twoWeeksAgo.getFullYear(), twoWeeksAgo.getMonth(), twoWeeksAgo.getDate(), 0, 0, 0
+        ).toISOString();
+
+        // 4 queries separadas por status — única forma confiável na API do Zendesk
+        const [
+          solvedToday, openedToday,
+          tNew, tOpen, tPending, tHold,
+          solvedWeek, urgentOpen, recentNew, recentOpen, solvedTwoWeeks
+        ] = await Promise.all([
+          zdGet('api/v2/search.json?query=type:ticket%20status:solved%20updated_at>=' + encodeURIComponent(todayDT) + '&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20created_at>=' + encodeURIComponent(todayDT) + '&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:new&sort_by=created_at&sort_order=desc&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:open&sort_by=created_at&sort_order=desc&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:pending&sort_by=created_at&sort_order=desc&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:hold&sort_by=created_at&sort_order=desc&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:solved%20updated_at>=' + encodeURIComponent(weekDT) + '&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:open%20priority:urgent&per_page=100'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:new&sort_by=created_at&sort_order=desc&per_page=10'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:open&sort_by=created_at&sort_order=desc&per_page=10'),
+          zdGet('api/v2/search.json?query=type:ticket%20status:solved%20updated_at>=' + encodeURIComponent(twoWeeksDT) + '&per_page=100'),
+        ]);
+
+        // Totais reais vindos do campo count da API (independente do per_page)
+        const counts = {
+          new: tNew.count || 0,
+          open: tOpen.count || 0,
+          pending: tPending.count || 0,
+          hold: tHold.count || 0,
+        };
+        const totalActive = counts.new + counts.open + counts.pending + counts.hold;
+
+        // Junta todos os resultados carregados para cálculos locais
+        const activeTickets = [
+          ...(tNew.results || []),
+          ...(tOpen.results || []),
+          ...(tPending.results || []),
+          ...(tHold.results || []),
+        ];
+
+        // Detecta tickets novos e toca o som (compara IDs desde o último fetch)
+        detectAndAnnounceNewTickets(activeTickets);
+
+        // Tickets não atribuídos (sem assignee_id)
+        const unassignedTickets = activeTickets.filter(t => !t.assignee_id);
+
+        // Alertas de estado: zerados / muitos não atribuídos
+        detectStateAlerts(totalActive, unassignedTickets.length);
+
+        // Carga por agente: conta tickets ativos por assignee_id, separando sub-status
+        // "Em andamento" e "Aberto" são ambos status:open mas com custom_status_id diferente
+        const agentLoad = {};
+        activeTickets.forEach(t => {
+          if (!t.assignee_id) return;
+          if (!agentLoad[t.assignee_id])
+            agentLoad[t.assignee_id] = { id: t.assignee_id, name: 'Agente #' + t.assignee_id, count: 0, emAndamento: 0, aberto: 0, pending: 0 };
+          agentLoad[t.assignee_id].count++;
+          if (t.status === 'pending') {
+            agentLoad[t.assignee_id].pending++;
+          } else if (t.status === 'open' || t.status === 'new') {
+            if (t.custom_status_id && EM_ANDAMENTO_IDS.has(t.custom_status_id)) {
+              agentLoad[t.assignee_id].emAndamento++;
+            } else {
+              agentLoad[t.assignee_id].aberto++;
+            }
+          }
+        });
+
+        // Tickets recentes = junção de new + open, ordenados por data
+        const recentTickets = [
+          ...(recentNew.results || []),
+          ...(recentOpen.results || []),
+        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 20);
+
+        console.log('[dashboard] Ativos:', totalActive,
+          '| new:', counts.new, 'open:', counts.open,
+          'pending:', counts.pending, 'hold:', counts.hold);
+        console.log('[dashboard] Nao atribuidos:', unassignedTickets.length,
+          '| Agentes c/ carga:', Object.keys(agentLoad).length);
+
+        setKPI('kpi-solved-today', solvedToday.count || 0);
+        setKPI('kpi-open-today', openedToday.count || 0);
+        setKPI('kpi-pending', totalActive);
+        setKPI('kpi-week', solvedWeek.count || 0);
+        setKPI('kpi-urgent', urgentOpen.count || 0);
+
+        renderStatusBreakdown({ counts }, totalActive);
+        renderUnassigned(unassignedTickets);
+        renderWeekChart(buildWeekData(solvedWeek.results || []));
+        renderSLA(solvedToday.count || 0, (solvedToday.count || 0) + totalActive);
+
+        // Resolve nomes ANTES de renderizar tickets e agentes
+        // Assim o cache fica populado e os tickets mostram o nome correto
+        const agentData = buildAgentData(solvedToday.results || [], solvedWeek.results || []);
+        const loadList = Object.values(agentLoad);
+
+        // Coleta TODOS os IDs necessários de uma vez:
+        // agentes que resolveram + agentes com carga + agentes nos tickets recentes
+        const combined = [...agentData];
+        loadList.forEach(a => { if (!combined.find(b => b.id === a.id)) combined.push(a); });
+        recentTickets.forEach(t => {
+          if (t.assignee_id && !combined.find(b => b.id === t.assignee_id))
+            combined.push({ id: t.assignee_id, name: 'Agente #' + t.assignee_id });
+        });
+
+        // Uma única chamada resolve todos os nomes e popula o cache global
+        await resolveAgentNames(combined);
+        combined.forEach(a => { if (agentLoad[a.id]) agentLoad[a.id].name = a.name; });
+
+        // Agora renderiza com o cache já populado
+        renderRecentTickets(recentTickets);
+        renderAgentTable(agentData);
+        renderAgentLoad(agentLoad);
+        renderAgentChart(agentData, solvedTwoWeeks.results || []);
+
+        document.getElementById('loading-overlay').style.display = 'none';
+      }
+
+      // ── RESOLVE NOMES DOS AGENTES ──────────────────────────────
+      // A Search API só retorna assignee_id. Buscamos os nomes
+      // em lote usando a Users API: /api/v2/users/show_many
+      async function resolveAgentNames(agents) {
+        // Aplica cache antes de qualquer chamada à API
+        agents.forEach(a => {
+          if (AGENT_NAME_CACHE[a.id]) a.name = AGENT_NAME_CACHE[a.id];
+        });
+
+        // Busca apenas os que ainda não têm nome
+        const ids = agents.filter(a => a.name.startsWith('Agente #')).map(a => a.id);
+        if (!ids.length) return;
+
+        try {
+          const res = await zdGet('api/v2/users/show_many.json?ids=' + ids.join(','));
+          (res.users || []).forEach(u => {
+            AGENT_NAME_CACHE[u.id] = u.name; // salva no cache global para tickets também
+          });
+          agents.forEach(a => {
+            if (AGENT_NAME_CACHE[a.id]) a.name = AGENT_NAME_CACHE[a.id];
+          });
+        } catch (e) {
+          console.warn('[agents] Nao foi possivel resolver nomes:', e.message);
+        }
+      }
+
+      // ── BUILD DATA ─────────────────────────────────────────────
+      function buildAgentData(todayT, weekT) {
+        const td = {}, wk = {}, names = {};
+        todayT.forEach(t => { if (t.assignee_id) { td[t.assignee_id] = (td[t.assignee_id] || 0) + 1; if (t.assignee && t.assignee.name) names[t.assignee_id] = t.assignee.name; } });
+        weekT.forEach(t => { if (t.assignee_id) { wk[t.assignee_id] = (wk[t.assignee_id] || 0) + 1; if (t.assignee && t.assignee.name) names[t.assignee_id] = t.assignee.name; } });
+        return Object.keys(td).map(id => ({ id, name: names[id] || `Agente #${id}`, count: td[id], week: wk[id] || 0 }))
+          .sort((a, b) => b.count - a.count).slice(0, 8);
+      }
+
+      function buildWeekData(tickets) {
+        const map = {};
+        tickets.forEach(t => {
+          // Converte a data UTC para o fuso local antes de agrupar por dia
+          // Evita que tickets resolvidos às 22h BRT apareçam no dia seguinte
+          const utcStr = t.updated_at || t.created_at || '';
+          if (!utcStr) return;
+          const localDate = new Date(utcStr);
+          // Formata como YYYY-MM-DD no fuso local do browser
+          const y = localDate.getFullYear();
+          const m = String(localDate.getMonth() + 1).padStart(2, '0');
+          const d = String(localDate.getDate()).padStart(2, '0');
+          const localDay = `${y}-${m}-${d}`;
+          map[localDay] = (map[localDay] || 0) + 1;
+        });
+        return daysOfWeek().map(d => {
+          // todayISO() já usa o fuso local
+          const iso = todayISO() === d.toISOString().split('T')[0]
+            ? todayISO()
+            : (() => {
+              const y = d.getFullYear();
+              const m = String(d.getMonth() + 1).padStart(2, '0');
+              const dd = String(d.getDate()).padStart(2, '0');
+              return `${y}-${m}-${dd}`;
+            })();
+          return {
+            label: d.toLocaleDateString('pt-BR', { weekday: 'short' }),
+            count: map[iso] || 0,
+            isToday: iso === todayISO()
+          };
+        });
+      }
+
+      // ── RENDER FUNCTIONS ───────────────────────────────────────
+      const STATUS_CFG = {
+        new: { label: 'Novos', color: '#c77dff' },
+        open: { label: 'Abertos', color: '#00c8ff' },
+        pending: { label: 'Pendentes', color: '#ffcc00' },
+        hold: { label: 'Em espera', color: '#ff6b35' },
+        solved: { label: 'Resolvidos', color: '#00ff9d' },
+        closed: { label: 'Fechados', color: '#5a7a99' },
+      };
+
+      function renderStatusBreakdown(data, total) {
+        const counts = data.counts;
+        document.getElementById('total-badge').textContent = `total: ${total}`;
+        const keys = ['new', 'open', 'pending', 'hold'].filter(k => counts[k] > 0);
+        const max = Math.max(...keys.map(k => counts[k]), 1);
+        document.getElementById('status-list').innerHTML = keys.map(k => {
+          const cfg = STATUS_CFG[k];
+          const pct = Math.round((counts[k] / max) * 100);
+          return `<div>
+      <div class="status-meta">
+        <div class="status-name"><div class="status-dot" style="background:${cfg.color}"></div>${cfg.label}</div>
+        <div class="status-count" style="color:${cfg.color}">${counts[k]}</div>
+      </div>
+      <div class="status-bar-bg"><div class="status-bar-fill" style="width:${pct}%;background:${cfg.color}"></div></div>
+    </div>`;
+        }).join('') || '<div style="color:var(--muted);font-size:12px">Tudo resolvido! 🎉</div>';
+      }
+
+      function renderUnassigned(tickets) {
+        const el = document.getElementById('unassigned-list');
+        if (!tickets.length) { el.innerHTML = ''; return; }
+        el.innerHTML = `
+    <div class="unassigned-header">
+      <span style="color:var(--warn)">⚠</span>
+      Não atribuídos (${tickets.length})
+    </div>
+    ${tickets.slice(0, 5).map(t => {
+          const ago = getTimeAgo(t.created_at);
+          const pc = { urgent: 'p-urgent', high: 'p-high', normal: 'p-normal', low: 'p-low' };
+          return `<div class="unassigned-item">
+        <div>
+          <div class="unassigned-subject">#${t.id} · ${t.subject || '(sem assunto)'}</div>
+          <span class="priority-badge ${pc[t.priority] || 'p-normal'}" style="font-size:9px">${t.priority || 'normal'}</span>
+        </div>
+        <div class="unassigned-time">${ago}</div>
+      </div>`;
+        }).join('')}`;
+      }
+
+      function getTimeAgo(isoDate) {
+        const diff = (Date.now() - new Date(isoDate)) / 60000;
+        if (diff < 60) return `${Math.round(diff)}min`;
+        if (diff < 1440) return `${Math.round(diff / 60)}h`;
+        return `${Math.round(diff / 1440)}d`;
+      }
+
+      function renderRecentTickets(tickets) {
+        const SC = {
+          new: '#c77dff',
+          open: 'var(--accent)',
+          pending: 'var(--warn)',
+          hold: 'var(--accent3)',
+          solved: 'var(--accent2)',
+          closed: 'var(--muted)',
+        };
+        const PC = { urgent: 'p-urgent', high: 'p-high', normal: 'p-normal', low: 'p-low' };
+        const PL = { urgent: '🔴 Urgente', high: '🟠 Alta', normal: '🔵 Normal', low: '⚪ Baixa' };
+
+        if (!tickets.length) {
+          document.getElementById('ticket-scroll-inner').innerHTML =
+            '<div style="color:var(--muted);font-size:12px">Sem tickets recentes</div>';
+          return;
+        }
+
+        const makeItem = t => {
+          const sc = SC[t.status] || 'var(--muted)';
+          const time = new Date(t.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+          // Agente: busca no cache pelo assignee_id
+          let agentLabel;
+          if (!t.assignee_id) {
+            agentLabel = `<span style="color:var(--warn);font-size:10px;font-family:'Space Mono',monospace">⚠ Não atribuído</span>`;
+          } else {
+            const nome = AGENT_NAME_CACHE[t.assignee_id] || ('Agente #' + t.assignee_id);
+            const first = nome.split(' ').slice(0, 2).join(' ');
+            agentLabel = `<span style="color:var(--muted);font-size:10px;font-family:'Space Mono',monospace">👤 ${first}</span>`;
+          }
+
+          return `<div class="ticket-item" style="border-left-color:${sc}">
+      <div style="min-width:0">
+        <div class="ticket-id">#${t.id} · <span style="color:${sc};font-size:9px;text-transform:uppercase">${STATUS_CFG[t.status]?.label || t.status}</span></div>
+        <div class="ticket-subject">${t.subject || '(sem assunto)'}</div>
+        <div class="ticket-meta" style="display:flex;gap:10px;align-items:center;margin-top:3px">
+          <span>${time}</span>
+          ${agentLabel}
+        </div>
+      </div>
+      <div style="flex-shrink:0"><span class="priority-badge ${PC[t.priority] || 'p-normal'}">${PL[t.priority] || 'Normal'}</span></div>
+    </div>`;
+        };
+
+        const items = tickets.map(makeItem).join('');
+        document.getElementById('ticket-scroll-inner').innerHTML = items + items; // duplica p/ loop infinito
+
+        const duration = Math.max(25, tickets.length * 4);
+        document.getElementById('ticket-scroll-inner').style.animationDuration = duration + 's';
+        document.getElementById('ticket-count-badge').textContent = `${tickets.length} tickets`;
+      }
+
+      function renderAgentTable(agents) {
+        if (!agents.length) { document.getElementById('agent-tbody').innerHTML = '<tr><td colspan="5" style="color:var(--muted);font-size:12px;padding:12px 8px">Nenhum ticket resolvido hoje ainda</td></tr>'; return; }
+        const max = Math.max(...agents.map(a => a.count), 1);
+        document.getElementById('agent-tbody').innerHTML = agents.map((a, i) => {
+          const [fg, bg] = avatarColor(i);
+          const pct = Math.round((a.count / max) * 100);
+          const slaClass = i === 0 ? 'sla-ok' : i < 3 ? 'sla-ok' : i < 5 ? 'sla-warn' : 'sla-warn';
+          const slaText = slaClass === 'sla-ok' ? '✓ OK' : '⚠ Risco';
+          return `<tr class="agent-row"><td style="color:var(--muted);font-family:'Space Mono',monospace;font-size:11px">${i + 1}</td><td><div class="agent-name-cell"><div class="avatar" style="background:${bg};color:${fg}">${initials(a.name)}</div><div class="agent-name">${a.name}</div></div></td><td><div class="bar-mini"><div class="bar-mini-fill" style="width:${pct}%;background:var(--accent2)"></div></div><span class="badge-num" style="color:var(--accent2)">${a.count}</span></td><td><span class="badge-num" style="color:var(--accent)">${a.week}</span></td><td style="text-align:right"><span class="sla-badge ${slaClass}">${slaText}</span></td></tr>`;
+        }).join('');
+      }
+
+      function renderAgentLoad(agentLoad) {
+        const wrap = document.getElementById('agent-load-wrap');
+        const container = document.getElementById('agent-load-bars');
+        const agents = Object.values(agentLoad).sort((a, b) => b.count - a.count);
+        if (!agents.length) { wrap.style.display = 'none'; return; }
+
+        const max = Math.max(...agents.map(a => a.count), 1);
+        const HIGH = 8;
+
+        // Legend
+        const legend = `
+    <div style="display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="font-size:9px;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:4px">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c77dff"></span>Em andamento
+      </span>
+      <span style="font-size:9px;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:4px">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#00c8ff"></span>Aberto
+      </span>
+      <span style="font-size:9px;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:4px">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#ffcc00"></span>Pendente
+      </span>
+    </div>`;
+
+        container.innerHTML = legend + agents.map(a => {
+          const totalPct = Math.round((a.count / max) * 100);
+          const total = a.count || 1;
+          const emAnd = a.emAndamento || 0;  // open com custom_status "Em andamento"
+          const aberto = a.aberto || 0;  // open com custom_status "Aberto" (ou new)
+          const pendente = a.pending || 0;  // pending
+
+          // Proportions inside the filled bar
+          const ePct = Math.round((emAnd / total) * 100);
+          const aPct = Math.round((aberto / total) * 100);
+          const pPct = 100 - ePct - aPct;
+
+          const alertClass = a.count >= HIGH ? 'load-high'
+            : a.count >= HIGH - 3 ? 'load-med'
+              : 'load-ok';
+          const alertText = a.count >= HIGH ? '⚠ ALTO'
+            : a.count >= HIGH - 3 ? 'MÉDIO'
+              : 'OK';
+
+          const seg = (color, pct, n) =>
+            pct > 0 ? `<div style="width:${pct}%;background:${color};height:100%;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="${n}">
+        ${n > 0 && pct >= 15 ? `<span class="agent-load-bar-label">${n}</span>` : ''}
+      </div>` : '';
+
+          return `
+      <div class="agent-load-row">
+        <div class="agent-load-name" title="${a.name}">${a.name.split(' ')[0]}</div>
+        <div class="agent-load-bar-track">
+          <div style="display:flex;height:100%;width:${totalPct}%;border-radius:4px;overflow:hidden">
+            ${seg('#c77dff', ePct, emAnd)}
+            ${seg('#00c8ff', aPct, aberto)}
+            ${seg('#ffcc00', pPct, pendente)}
+          </div>
+        </div>
+        <div class="agent-load-count" style="color:var(--text)">${a.count}</div>
+        <span class="agent-load-alert ${alertClass}">${alertText}</span>
+      </div>`;
+        }).join('');
+
+        wrap.style.display = 'block';
+      }
+
+      function renderAgentChart(agentData, twoWeeksTickets) {
+        const wrap = document.getElementById('agent-chart-wrap');
+        const container = document.getElementById('agent-bar-chart');
+        if (!agentData.length) { wrap.style.display = 'none'; return; }
+
+        // Agrupa tickets das últimas 2 semanas por agente
+        const twoWeekMap = {};
+        twoWeeksTickets.forEach(t => {
+          if (t.assignee_id) twoWeekMap[t.assignee_id] = (twoWeekMap[t.assignee_id] || 0) + 1;
+        });
+
+        // Pega os agentes do ranking atual e adiciona contagem 2 semanas
+        const chartData = agentData.map(a => ({
+          name: a.name,
+          count: twoWeekMap[a.id] || a.week || 0,
+          color: a.color || '#00c8ff',
+        })).sort((a, b) => b.count - a.count).slice(0, 6);
+
+        const max = Math.max(...chartData.map(a => a.count), 1);
+        const barColors = ['#00c8ff', '#00ff9d', '#c77dff', '#ff6b35', '#ffcc00', '#f72585'];
+
+        container.innerHTML = chartData.map((a, i) => `
+    <div class="agent-bar-row">
+      <div class="agent-bar-name" title="${a.name}">${a.name.split(' ')[0]}</div>
+      <div class="agent-bar-track">
+        <div class="agent-bar-fill" style="width:${Math.round((a.count / max) * 100)}%;background:${barColors[i % barColors.length]};opacity:0.85"></div>
+      </div>
+      <div class="agent-bar-val">${a.count}</div>
+    </div>`).join('');
+
+        wrap.style.display = 'block';
+      }
+
+      function renderWeekChart(days) {
+        const max = Math.max(...days.map(d => d.count), 1);
+        document.getElementById('week-chart').innerHTML = days.map(d => {
+          const h = Math.max(Math.round((d.count / max) * 100), d.count > 0 ? 4 : 0);
+          const color = d.isToday ? 'var(--accent)' : 'rgba(0,200,255,.3)';
+          return `<div class="week-col"><div class="week-val" style="color:${d.isToday ? 'var(--accent)' : 'var(--muted)'}">${d.count || ''}</div><div class="week-bar-wrap"><div class="week-bar${d.isToday ? ' today' : ''}" style="height:${h}%;background:${color}"></div></div><div class="week-label" style="${d.isToday ? 'color:var(--accent)' : ''}">${d.label}</div></div>`;
+        }).join('');
+      }
+
+      function renderSLA(resolved, total) {
+        const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
+        const color = pct >= 70 ? 'var(--accent2)' : pct >= 40 ? 'var(--warn)' : 'var(--red)';
+        const label = pct >= 70 ? 'Bom ritmo! ✓'
+          : pct >= 40 ? 'Em andamento'
+            : 'Atenção necessária';
+
+        document.getElementById('sla-section').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <div>
+        <div class="sla-meta">
+          <div class="sla-name">Taxa de Resolução Hoje</div>
+          <div class="sla-pct" style="color:${color}">${pct}%</div>
+        </div>
+        <div class="sla-bar-bg">
+          <div class="sla-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:'Space Mono',monospace">
+          ${label}
+        </div>
+      </div>
+
+      <div style="background:var(--surface2);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:4px">Resolvidos hoje</div>
+          <div style="font-size:28px;font-weight:800;color:${color};font-family:'Space Mono',monospace">${resolved}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:4px">Total em aberto</div>
+          <div style="font-size:28px;font-weight:800;color:var(--muted);font-family:'Space Mono',monospace">${total - resolved}</div>
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;line-height:1.7;border-top:1px solid var(--border);padding-top:10px">
+        Cálculo: tickets resolvidos hoje ÷ (resolvidos + em aberto) × 100
+      </div>
+    </div>`;
+      }
+
+      // ── DEMO ───────────────────────────────────────────────────
+      function loadDemoMode() {
+        IS_DEMO = true;
+        document.getElementById('config-panel').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('subdomain-label').textContent = 'demo.zendesk.com';
+        document.getElementById('demo-banner').style.display = 'flex';
+        updateSoundToggleUI();
+        renderDemo(); startCountdown();
+      }
+
+      function renderDemo() {
+        setKPI('kpi-solved-today', 47); setKPI('kpi-open-today', 63); setKPI('kpi-pending', 18); setKPI('kpi-week', 214); setKPI('kpi-urgent', 3);
+        renderStatusBreakdown({ counts: { new: 3, open: 4, pending: 3, hold: 2 } }, 12);
+        renderUnassigned([
+          { id: 101290, subject: 'Problema com acesso VPN', priority: 'high', created_at: new Date(Date.now() - 1200000).toISOString() },
+          { id: 101285, subject: 'Solicitação de novo equipamento', priority: 'normal', created_at: new Date(Date.now() - 3600000).toISOString() },
+          { id: 101279, subject: 'Dúvida sobre licença de software', priority: 'low', created_at: new Date(Date.now() - 7200000).toISOString() },
+        ]);
+        renderRecentTickets([
+          { id: 101283, subject: 'Erro ao acessar portal do cliente', status: 'open', priority: 'urgent', created_at: new Date().toISOString() },
+          { id: 101282, subject: 'Dúvida sobre cobrança de fatura', status: 'pending', priority: 'high', created_at: new Date(Date.now() - 600000).toISOString() },
+          { id: 101281, subject: 'Solicitação de segunda via de NF', status: 'solved', priority: 'normal', created_at: new Date(Date.now() - 1200000).toISOString() },
+          { id: 101280, subject: 'Lentidão no sistema ERP', status: 'open', priority: 'high', created_at: new Date(Date.now() - 1800000).toISOString() },
+          { id: 101279, subject: 'Problema com autenticação 2FA', status: 'new', priority: 'urgent', created_at: new Date(Date.now() - 2400000).toISOString() },
+          { id: 101278, subject: 'Atualização cadastral de endereço', status: 'solved', priority: 'low', created_at: new Date(Date.now() - 3000000).toISOString() },
+          { id: 101277, subject: 'Integração API retornando 500', status: 'open', priority: 'urgent', created_at: new Date(Date.now() - 3600000).toISOString() },
+          { id: 101276, subject: 'Cancelamento de assinatura', status: 'hold', priority: 'normal', created_at: new Date(Date.now() - 4200000).toISOString() },
+          { id: 101275, subject: 'Notebook não liga após atualização', status: 'new', priority: 'high', created_at: new Date(Date.now() - 4800000).toISOString() },
+          { id: 101274, subject: 'Acesso negado ao sistema financeiro', status: 'pending', priority: 'urgent', created_at: new Date(Date.now() - 5400000).toISOString() },
+        ]);
+        const demoAgents = [
+          { id: 1, name: 'Ana Beatriz Silva', count: 12, week: 51 }, { id: 2, name: 'Carlos Eduardo M.', count: 10, week: 44 },
+          { id: 3, name: 'Fernanda Costa', count: 9, week: 38 }, { id: 4, name: 'Rafael Oliveira', count: 8, week: 42 },
+          { id: 5, name: 'Juliana Pereira', count: 5, week: 29 }, { id: 6, name: 'Marcos Andrade', count: 3, week: 10 },
+        ];
+        renderAgentTable(demoAgents);
+        renderAgentLoad({
+          1: { id: 1, name: 'Ana Beatriz Silva', count: 9, emAndamento: 2, aberto: 5, pending: 2 },
+          2: { id: 2, name: 'Carlos Eduardo M.', count: 6, emAndamento: 1, aberto: 4, pending: 1 },
+          3: { id: 3, name: 'Fernanda Costa', count: 8, emAndamento: 3, aberto: 3, pending: 2 },
+          4: { id: 4, name: 'Rafael Oliveira', count: 3, emAndamento: 0, aberto: 2, pending: 1 },
+          5: { id: 5, name: 'Juliana Pereira', count: 5, emAndamento: 1, aberto: 3, pending: 1 },
+          6: { id: 6, name: 'Marcos Andrade', count: 2, emAndamento: 0, aberto: 1, pending: 1 },
+        });
+        renderAgentChart(demoAgents, [
+          ...Array(63).fill(null).map((_, i) => ({ assignee_id: (i % 6) + 1 })),
+        ]);
+        const today = new Date().getDay();
+        renderWeekChart(daysOfWeek().map((d, i) => ({ label: d.toLocaleDateString('pt-BR', { weekday: 'short' }), count: [32, 41, 38, 52, 47, 28, 0][i] || 0, isToday: d.toISOString().split('T')[0] === todayISO() })));
+        renderSLA(47, 65);
+        document.getElementById('loading-overlay').style.display = 'none';
+      }
+
+      // Verifica se o container tem variáveis de ambiente configuradas
+      async function checkEnvConfig() {
+        try {
+          const res = await fetch(`${PROXY}/config`);
+          const data = await res.json();
+          if (data.hasEnvConfig) {
+            console.log('[config] Variáveis de ambiente detectadas no container!');
+            if (data.subdomain) {
+              const inpSub = document.getElementById('inp-subdomain');
+              if (inpSub) inpSub.value = data.subdomain;
+            }
+            connectZendesk(true);
+          }
+        } catch (e) {
+          console.warn('[config] Não foi possível verificar config do ENV:', e.message);
+        }
+      }
+      window.addEventListener('DOMContentLoaded', checkEnvConfig);
+  </script>
 </body>
+
 </html>
